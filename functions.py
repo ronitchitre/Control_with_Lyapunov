@@ -13,6 +13,26 @@ def vec_to_mat(v_u):
     return v_u.T.dot(v_u)
 
 
+def beta(quad, pendulum, k33):
+    gamma3 = np.array([0, 0, 1])
+    a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
+    R2 = pendulum.m_R2
+    inertia2 = pendulum.m_inertia2
+    inertia2_inv = np.linalg.inv(inertia2)
+    inertia2_inv_spatial = R2.dot(inertia2_inv).dot(R2.T)
+    b1 = inertia2_inv_spatial.dot(pendulum.v_ang_mom2)
+    b2 = np.cross(R2.dot(gamma3), gamma3)
+    b3 = pendulum.v_ang_mom2 + np.cross(a, pendulum.v_mom2)
+    if b3[0] != 0:
+        return -1 * np.dot(b1, b2) / (k33 * b3[0]) * np.array([1, 0, 0])
+    elif b3[1] != 0:
+        return -1 * np.dot(b1, b2) / (k33 * b3[1]) * np.array([0, 1, 0])
+    if b3[2] != 0:
+        return -1 * np.dot(b1, b2) / (k33 * b3[2]) * np.array([0, 0, 1])
+    else:
+        return 0
+
+
 def constraint_force(quad, pendulum, f_u_1, torq_u_1, torq_u_2):
     R1 = quad.m_R1
     R2 = pendulum.m_R2
@@ -45,6 +65,26 @@ def constraint_force(quad, pendulum, f_u_1, torq_u_1, torq_u_2):
     A_inv = np.linalg.inv(A)
     f_c = A_inv.dot(b)
     return f_c
+
+
+def control(quad, pendulum, ref1, ref2, k33):
+    o_1r = ref1[0]
+    p_1r = ref1[1]
+    o_2r = ref2[0]
+    p_2r = ref2[1]
+    o_1e = o_1r - quad.v_position1
+    p_1e = p_1r - quad.v_mom1
+    o_2e = o_2r - pendulum.v_position2
+    p_2e = p_2r - pendulum.v_mom2
+    e3 = np.array([0, 0, 1])
+    a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
+    f1 = np.dot(o_1e, e3) * p_1e[2] / ((p_1e[2] + p_2e[2]) * quad.mass1) * e3
+    f_u_1 = (-1 * quad.f_e_1) + (-1 * pendulum.f_e_2) + f1 + p_1e + p_2e
+    H_p_2 = pendulum.v_ang_mom2 + np.cross(a, pendulum.v_mom2)
+    torq_u_2 = beta(quad, pendulum, k33) - H_p_2
+    H_p_1 = quad.v_ang_mom1 + np.cross(-1 * quad.v_d, quad.v_mom1)
+    torq_u_1 = torq_u_2 - np.cross(quad.pos_of_control, f_u_1) - H_p_1
+    return [f_u_1, torq_u_1, torq_u_2]
 
 
 if __name__ == "__main__":
