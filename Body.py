@@ -15,8 +15,7 @@ class Quad:
 
 
 class Pendulum:
-    def __init__(self, v_position2, m_inertia2, v_mom2, mass2, length, m_R2, v_ang_mom2):
-        self.v_position2 = v_position2
+    def __init__(self, m_inertia2, v_mom2, mass2, length, m_R2, v_ang_mom2, quad):
         self.m_inertia2 = m_inertia2
         self.v_mom2 = v_mom2
         self.mass2 = mass2
@@ -25,3 +24,5 @@ class Pendulum:
         self.v_ang_mom2 = v_ang_mom2
         gravity = np.array([0, 0, -9.8])
         self.f_e_2 = self.m_R2.dot(self.mass2 * gravity)
+        c3 = np.array([0, 0, 1])
+        self.v_position2 = quad.v_position1 + quad.m_R1.dot(quad.v_d) - (length / 2) * m_R2.dot(c3)
