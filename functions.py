@@ -1,5 +1,5 @@
 import numpy as np
-from Body import Quad, Pendulum
+from Body import *
 
 
 def hat(v_u):
@@ -15,6 +15,7 @@ def vec_to_mat(v_u):
 
 def beta(quad, pendulum, k33):
     gamma3 = np.array([0, 0, 1])
+    R1 = quad.m_R1
     a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
     R2 = pendulum.m_R2
     inertia2 = pendulum.m_inertia2
@@ -40,6 +41,7 @@ def constraint_force(quad, pendulum, control):
     torq_u_1 = control[1]
     torq_u_2 = control[2]
     a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
+    print(R2.T.dot(a))
     inertia1_spatial = R1.dot(quad.m_inertia1).dot(R1.T)
     inertia2_spatial = R2.dot(pendulum.m_inertia2).dot(R2.T)
     inertia1_spatial_inv = np.linalg.inv(inertia1_spatial)
@@ -60,7 +62,7 @@ def constraint_force(quad, pendulum, control):
 
     A1 = np.eye(3) / quad.mass1 + np.eye(3) / pendulum.mass2
     A2 = inertia1_spatial_inv * (np.linalg.norm(R1.dot(quad.v_d))) ** 2
-    A3 = inertia2_spatial_inv * (np.linalg.norm(a)) ** 2
+    A3 = inertia2_spatial_inv * (pendulum.length / 2) ** 2
     A4 = -1 * inertia1_spatial_inv.dot(vec_to_mat(R1.dot(quad.v_d)))
     A5 = -1 * inertia2_spatial_inv.dot(vec_to_mat(a))
     A = A1 + A2 + A3 + A4 + A5
@@ -78,6 +80,7 @@ def control(quad, pendulum, ref1, ref2, k33):
     o_1e = o_1r - quad.v_position1
     p_1e = p_1r - quad.v_mom1
     p_2e = p_2r - pendulum.v_mom2
+    R1 = quad.m_R1
     a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
     e3 = np.array([0, 0, 1])
     if p_1e[0] + p_2e[0] != 0:
@@ -97,6 +100,7 @@ def control(quad, pendulum, ref1, ref2, k33):
 
 
 def dynamics(quad, pendulum, ref1, ref2, k33):
+    x_dot = np.empty(7, dtype='object')
     R1 = quad.m_R1
     R2 = pendulum.m_R2
     a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
@@ -106,18 +110,25 @@ def dynamics(quad, pendulum, ref1, ref2, k33):
     torq_c_2 = np.cross(a, f_c)
     torq_fu = np.cross(R1.dot(quad.pos_of_control), control_app[0])
     o1_dot = quad.v_mom1 / quad.mass1
+    x_dot[0] = o1_dot
     omega1 = R1.dot(np.linalg.inv(quad.m_inertia1)).dot(R1.T).dot(quad.v_ang_mom1)
     omega2 = R2.dot(np.linalg.inv(pendulum.m_inertia2)).dot(R2.T).dot(pendulum.v_ang_mom2)
     R1_dot = hat(omega1).dot(R1)
+    x_dot[1] = R1_dot
     p1_dot = quad.f_e_1 + control_app[0] + f_c
+    x_dot[2] = p1_dot
     ang_mom1_dot = control_app[1] - control_app[2] + torq_c_1 + torq_fu
+    x_dot[3] = ang_mom1_dot
 
-    o2_dot = pendulum.v_mom2 / pendulum.mass2
+    # o2_dot = pendulum.v_mom2 / pendulum.mass2
+    # x_dot[4] = o2_dot
     R2_dot = hat(omega2).dot(R2)
+    x_dot[4] = R2_dot
     p2_dot = pendulum.f_e_2 - f_c
+    x_dot[5] = p2_dot
     ang_mom2_dot = control_app[2] + torq_c_2
-
-    return [o1_dot, R1_dot, p1_dot, ang_mom1_dot, o2_dot, R2_dot, p2_dot, ang_mom2_dot]
+    x_dot[6] = ang_mom2_dot
+    return x_dot
 
 
 if __name__ == "__main__":
@@ -128,15 +139,16 @@ if __name__ == "__main__":
     mom1 = np.array([1, -5, 3])
     ang_mom1 = np.array([-10, 1, 3])
     R1 = np.eye(3)
-    quad = Quad(o1, inertia, mom1, mass1, d, R1, ang_mom1)
+    quad = Quad(o1, R1, mom1, ang_mom1)
 
-    inertia = np.array([[1, 0, 0], [0, 1 / 12, 0], [0, 0, 1 / 12]])
     v_mom2 = np.array([5, 9, -3])
     mass2 = 1
     length = 1
     R2 = np.eye(3)
     ang_mom2 = np.array([4, 2, 1])
-    pendulum = Pendulum(inertia, v_mom2, mass2, length, R2, ang_mom2, quad)
+    c3 = np.array([0, 0, 1])
+    o2 = o1 + R1.dot(d) - (R2.dot(c3) * (length / 2))
+    pendulum = Pendulum(o2, R2, v_mom2, ang_mom2)
 
     f_u_1 = np.array([8, -1, 2])
     torq_u_1 = np.array([1, 5, 1])
