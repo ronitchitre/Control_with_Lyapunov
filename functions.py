@@ -33,9 +33,12 @@ def beta(quad, pendulum, k33):
         return 0
 
 
-def constraint_force(quad, pendulum, f_u_1, torq_u_1, torq_u_2):
+def constraint_force(quad, pendulum, control):
     R1 = quad.m_R1
     R2 = pendulum.m_R2
+    f_u_1 = control[0]
+    torq_u_1 = control[1]
+    torq_u_2 = control[2]
     a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
     inertia1_spatial = R1.dot(quad.m_inertia1).dot(R1.T)
     inertia2_spatial = R2.dot(pendulum.m_inertia2).dot(R2.T)
@@ -74,11 +77,17 @@ def control(quad, pendulum, ref1, ref2, k33):
     p_2r = ref2[1]
     o_1e = o_1r - quad.v_position1
     p_1e = p_1r - quad.v_mom1
-    o_2e = o_2r - pendulum.v_position2
     p_2e = p_2r - pendulum.v_mom2
-    e3 = np.array([0, 0, 1])
     a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
-    f1 = np.dot(o_1e, e3) * p_1e[2] / ((p_1e[2] + p_2e[2]) * quad.mass1) * e3
+    e3 = np.array([0, 0, 1])
+    if p_1e[0] + p_2e[0] != 0:
+        f1 = np.dot(o_1e, e3) * p_1e[2] / ((p_1e[0] + p_2e[0]) * quad.mass1) * np.array([1, 0, 0])
+    if p_1e[1] + p_2e[1] != 0:
+        f1 = np.dot(o_1e, e3) * p_1e[2] / ((p_1e[1] + p_2e[1]) * quad.mass1) * np.array([0, 1, 0])
+    if p_1e[2] + p_2e[2] != 0:
+        f1 = np.dot(o_1e, e3) * p_1e[2] / ((p_1e[2] + p_2e[2]) * quad.mass1) * np.array([0, 0, 1])
+    else:
+        f1 = np.array([0, 0, 0])
     f_u_1 = (-1 * quad.f_e_1) + (-1 * pendulum.f_e_2) + f1 + p_1e + p_2e
     H_p_2 = pendulum.v_ang_mom2 + np.cross(a, pendulum.v_mom2)
     torq_u_2 = beta(quad, pendulum, k33) - H_p_2
@@ -87,26 +96,53 @@ def control(quad, pendulum, ref1, ref2, k33):
     return [f_u_1, torq_u_1, torq_u_2]
 
 
+def dynamics(quad, pendulum, ref1, ref2, k33):
+    R1 = quad.m_R1
+    R2 = pendulum.m_R2
+    a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
+    control_app = control(quad, pendulum, ref1, ref2, k33)
+    f_c = constraint_force(quad, pendulum, control_app)
+    torq_c_1 = np.cross(R1.dot(quad.v_d), f_c)
+    torq_c_2 = np.cross(a, f_c)
+    torq_fu = np.cross(R1.dot(quad.pos_of_control), control_app[0])
+    o1_dot = quad.v_mom1 / quad.mass1
+    omega1 = R1.dot(np.linalg.inv(quad.m_inertia1)).dot(R1.T).dot(quad.v_ang_mom1)
+    omega2 = R2.dot(np.linalg.inv(pendulum.m_inertia2)).dot(R2.T).dot(pendulum.v_ang_mom2)
+    R1_dot = hat(omega1).dot(R1)
+    p1_dot = quad.f_e_1 + control_app[0] + f_c
+    ang_mom1_dot = control_app[1] - control_app[2] + torq_c_1 + torq_fu
+
+    o2_dot = pendulum.v_mom2 / pendulum.mass2
+    R2_dot = hat(omega2).dot(R2)
+    p2_dot = pendulum.f_e_2 - f_c
+    ang_mom2_dot = control_app[2] + torq_c_2
+
+    return [o1_dot, R1_dot, p1_dot, ang_mom1_dot, o2_dot, R2_dot, p2_dot, ang_mom2_dot]
+
+
 if __name__ == "__main__":
-    o1 = np.array([0, 0, 0])
+    o1 = np.array([4, 10, -3])
     d = np.array([0, 0, -0.5])
     inertia = np.eye(3)
     mass1 = 6
-    mom1 = np.array([1, 0, 0])
-    ang_mom1 = np.array([0, 1, 0])
+    mom1 = np.array([1, -5, 3])
+    ang_mom1 = np.array([-10, 1, 3])
     R1 = np.eye(3)
     quad = Quad(o1, inertia, mom1, mass1, d, R1, ang_mom1)
 
     inertia = np.array([[1, 0, 0], [0, 1 / 12, 0], [0, 0, 1 / 12]])
-    v_mom2 = np.array([0.05, 0, 0])
+    v_mom2 = np.array([5, 9, -3])
     mass2 = 1
     length = 1
     R2 = np.eye(3)
-    ang_mom2 = np.array([1, 0, 0])
+    ang_mom2 = np.array([4, 2, 1])
     pendulum = Pendulum(inertia, v_mom2, mass2, length, R2, ang_mom2, quad)
 
-    f_u_1 = np.array([0, 1, 1])
-    torq_u_1 = np.array([1, 0, 0])
-    torq_u_2 = np.array([0, 1, 0])
+    f_u_1 = np.array([8, -1, 2])
+    torq_u_1 = np.array([1, 5, 1])
+    torq_u_2 = np.array([-4, -9, -1])
 
-    print(constraint_force(quad, pendulum, f_u_1, torq_u_1, torq_u_2))
+    ref1 = np.array([[1, 1, 1], [1, 1, 0]])
+    ref2 = np.array([[1, 1, 0], [2, 1, 0]])
+
+    print(dynamics(quad, pendulum, ref1, ref2, 1))
