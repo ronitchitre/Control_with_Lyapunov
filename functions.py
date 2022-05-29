@@ -41,7 +41,6 @@ def constraint_force(quad, pendulum, control):
     torq_u_1 = control[1]
     torq_u_2 = control[2]
     a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
-    print(R2.T.dot(a))
     inertia1_spatial = R1.dot(quad.m_inertia1).dot(R1.T)
     inertia2_spatial = R2.dot(pendulum.m_inertia2).dot(R2.T)
     inertia1_spatial_inv = np.linalg.inv(inertia1_spatial)
@@ -96,11 +95,12 @@ def control(quad, pendulum, ref1, ref2, k33):
     torq_u_2 = beta(quad, pendulum, k33) - H_p_2
     H_p_1 = quad.v_ang_mom1 + np.cross(-1 * quad.v_d, quad.v_mom1)
     torq_u_1 = torq_u_2 - np.cross(quad.pos_of_control, f_u_1) - H_p_1
+    print(p_1e[0] + p_2e[0])
     return [f_u_1, torq_u_1, torq_u_2]
 
 
 def dynamics(quad, pendulum, ref1, ref2, k33):
-    x_dot = np.empty(7, dtype='object')
+    x_dot = np.empty(6, dtype='object')
     R1 = quad.m_R1
     R2 = pendulum.m_R2
     a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
@@ -124,10 +124,10 @@ def dynamics(quad, pendulum, ref1, ref2, k33):
     # x_dot[4] = o2_dot
     R2_dot = hat(omega2).dot(R2)
     x_dot[4] = R2_dot
-    p2_dot = pendulum.f_e_2 - f_c
-    x_dot[5] = p2_dot
+    # p2_dot = pendulum.f_e_2 - f_c
+    # x_dot[5] = p2_dot
     ang_mom2_dot = control_app[2] + torq_c_2
-    x_dot[6] = ang_mom2_dot
+    x_dot[5] = ang_mom2_dot
     return x_dot
 
 

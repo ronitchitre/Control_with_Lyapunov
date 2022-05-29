@@ -23,7 +23,7 @@ k33 = 5
 
 def system_ode(t, x):
     quad = Quad(x[0], x[1], x[2], x[3])
-    pendulum = Pendulum(x[4], x[5], x[6], quad)
+    pendulum = Pendulum(x[4], x[5], quad)
     x_dot = dynamics(quad, pendulum, ref1, ref2, k33)
     return x_dot
 
@@ -32,12 +32,12 @@ d = np.array([0, 0, -0.5])
 length = 1
 c3 = np.array([0, 0, 1])
 o2 = o1 + R1.dot(d) - (R2.dot(c3) * (length/2))
-initial_cond = [o1, R1, mom1, ang_mom1, R2, mom2, ang_mom2]
-initial_x = np.empty(7, dtype='object')
+initial_cond = [o1, R1, mom1, ang_mom1, R2, ang_mom2]
+initial_x = np.empty(6, dtype='object')
 for i in range(len(initial_cond)):
     initial_x[i] = initial_cond[i]
 time = np.linspace(1, 10, 100)
-y = rk4method(system_ode, initial_x, time, 7)
+y = rk4method(system_ode, initial_x, time, 6)
 # for i in y:
 #     R1 = i[1]
 #     print(np.linalg.det(R1))
