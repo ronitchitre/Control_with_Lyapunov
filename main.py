@@ -9,16 +9,16 @@ o1 = np.array([4, 10, -3])
 mom1 = np.array([0, 0, 0])
 ang_mom1 = np.array([0, 0, 0])
 R1 = np.eye(3)
-# quad = Quad(o1, inertia, mom1, mass1, d, R1, ang_mom1)
+quad = Quad(o1, R1, mom1, ang_mom1)
 
 mom2 = np.array([0, 0, 0])
 R2 = np.eye(3)
 ang_mom2 = np.array([0, 0, 0])
-# pendulum = Pendulum(o2 ,inertia, v_mom2, mass2, length, R2, ang_mom2)
+pendulum = Pendulum(R2, ang_mom2, quad)
 
 ref1 = np.array([[1, 1, 1], [1, 1, 0]])
-ref2 = np.array([[1, 1, 0], [2, 1, 0]])
-k33 = 5
+ref2 = np.array([[1, 1, 0], [1, 1, 0]])
+k33 = 10
 
 
 def system_ode(t, x):
