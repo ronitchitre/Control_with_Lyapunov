@@ -13,85 +13,6 @@ def vec_to_mat(v_u):
     return v_u.T.dot(v_u)
 
 
-def rotation_angles(matrix, order):
-    """
-    input
-        matrix = 3x3 rotation matrix (numpy array)
-        oreder(str) = rotation order of x, y, z : e.g, rotation XZY -- 'xzy'
-    output
-        theta1, theta2, theta3 = rotation angles in rotation order
-    """
-    r11, r12, r13 = matrix[0]
-    r21, r22, r23 = matrix[1]
-    r31, r32, r33 = matrix[2]
-
-    if order == 'xzx':
-        theta1 = np.arctan(r31 / r21)
-        theta2 = np.arctan(r21 / (r11 * np.cos(theta1)))
-        theta3 = np.arctan(-r13 / r12)
-
-    elif order == 'xyx':
-        theta1 = np.arctan(-r21 / r31)
-        theta2 = np.arctan(-r31 / (r11 * np.cos(theta1)))
-        theta3 = np.arctan(r12 / r13)
-
-    elif order == 'yxy':
-        theta1 = np.arctan(r12 / r32)
-        theta2 = np.arctan(r32 / (r22 * np.cos(theta1)))
-        theta3 = np.arctan(-r21 / r23)
-
-    elif order == 'yzy':
-        theta1 = np.arctan(-r32 / r12)
-        theta2 = np.arctan(-r12 / (r22 * np.cos(theta1)))
-        theta3 = np.arctan(r23 / r21)
-
-    elif order == 'zyz':
-        theta1 = np.arctan(r23 / r13)
-        theta2 = np.arctan(r13 / (r33 * np.cos(theta1)))
-        theta3 = np.arctan(-r32 / r31)
-
-    elif order == 'zxz':
-        theta1 = np.arctan(-r13 / r23)
-        theta2 = np.arctan(-r23 / (r33 * np.cos(theta1)))
-        theta3 = np.arctan(r31 / r32)
-
-    elif order == 'xzy':
-        theta1 = np.arctan(r32 / r22)
-        theta2 = np.arctan(-r12 * np.cos(theta1) / r22)
-        theta3 = np.arctan(r13 / r11)
-
-    elif order == 'xyz':
-        theta1 = np.arctan(-r23 / r33)
-        theta2 = np.arctan(r13 * np.cos(theta1) / r33)
-        theta3 = np.arctan(-r12 / r11)
-
-    elif order == 'yxz':
-        theta1 = np.arctan(r13 / r33)
-        theta2 = np.arctan(-r23 * np.cos(theta1) / r33)
-        theta3 = np.arctan(r21 / r22)
-
-    elif order == 'yzx':
-        theta1 = np.arctan(-r31 / r11)
-        theta2 = np.arctan(r21 * np.cos(theta1) / r11)
-        theta3 = np.arctan(-r23 / r22)
-
-    elif order == 'zyx':
-        theta1 = np.arctan(r21 / r11)
-        theta2 = np.arctan(-r31 * np.cos(theta1) / r11)
-        theta3 = np.arctan(r32 / r33)
-
-    elif order == 'zxy':
-        theta1 = np.arctan(-r12 / r22)
-        theta2 = np.arctan(r32 * np.cos(theta1) / r22)
-        theta3 = np.arctan(-r31 / r33)
-
-    theta1 = theta1 * 180 / np.pi
-    theta2 = theta2 * 180 / np.pi
-    theta3 = theta3 * 180 / np.pi
-
-    return (theta1, theta2, theta3)
-
-
 def beta(quad, pendulum, k33):
     gamma3 = np.array([0, 0, 1])
     R1 = quad.m_R1
@@ -103,11 +24,11 @@ def beta(quad, pendulum, k33):
     b1 = inertia2_inv_spatial.dot(pendulum.v_ang_mom2)
     b2 = np.cross(R2.dot(gamma3), gamma3)
     b3 = pendulum.v_ang_mom2 + np.cross(a, pendulum.v_mom2)
-    if abs(b3[2]) >= 10 ** -5:
+    if abs(b3[2]) >= 10 ** -3:
         return -1 * np.dot(b1, b2) / (k33 * b3[2]) * np.array([0, 0, 1])
-    elif abs(b3[1]) >= 10 ** -5:
+    elif abs(b3[1]) >= 10 ** -3:
         return -1 * np.dot(b1, b2) / (k33 * b3[1]) * np.array([0, 1, 0])
-    if abs(b3[1]) >= 10 ** -5:
+    if abs(b3[1]) >= 10 ** -3:
         return -1 * np.dot(b1, b2) / (k33 * b3[0]) * np.array([1, 0, 0])
     else:
         return 0
@@ -171,11 +92,14 @@ def control(quad, pendulum, ref1, ref2, k33):
     else:
         f1 = np.array([0, 0, 0])
     f_u_1 = (-1 * quad.f_e_1) + (-1 * pendulum.f_e_2) + f1 + p_1e + p_2e
+    # f_u_1 = (-1 * quad.f_e_1) + (-1 * pendulum.f_e_2)
     H_p_2 = pendulum.v_ang_mom2 + np.cross(a, pendulum.v_mom2)
     torq_u_2 = beta(quad, pendulum, k33) - H_p_2
+    # torq_u_2 = np.array([0, 0, 0])
     H_p_1 = quad.v_ang_mom1 + np.cross(-1 * R1.dot(quad.v_d), quad.v_mom1)
     r = quad.m_R1.dot(quad.pos_of_control - quad.v_d)
     torq_u_1 = torq_u_2 - np.cross(r, f_u_1) - H_p_1
+    # torq_u_1 = torq_u_2 - np.cross(r, f_u_1)
     return [f_u_1, torq_u_1, torq_u_2]
 
 
@@ -211,6 +135,34 @@ def dynamics(quad, pendulum, ref1, ref2, k33):
     return x_dot
 
 
+def W_dot(quad, pendulum, ref1, ref2, k33):
+    R2 = pendulum.m_R2
+    R1 = quad.m_R1
+    a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
+    control_app = control(quad, pendulum, ref1, ref2, k33)
+    o_1r = ref1[0]
+    p_1r = ref1[1]
+    o_2r = ref2[0]
+    p_2r = ref2[1]
+    o_1e = o_1r - quad.v_position1
+    p_1e = p_1r - quad.v_mom1
+    p_2e = p_2r - pendulum.v_mom2
+    omega2 = R2.dot(np.linalg.inv(pendulum.m_inertia2)).dot(R2.T).dot(pendulum.v_ang_mom2)
+    W1 = o_1e[2] * p_1e[2] / quad.mass1
+    gamma = np.array([0, 0, 1])
+    W2 = np.dot(gamma, hat(omega2).dot(R2).dot(gamma))
+    W3 = k33 * np.dot(p_1e + p_2e, -1 * quad.f_e_1 - pendulum.f_e_2 - control_app[0])
+    H_p_1 = quad.v_ang_mom1 + np.cross(-1 * R1.dot(quad.v_d), quad.v_mom1)
+    H_p_2 = pendulum.v_ang_mom2 + np.cross(a, pendulum.v_mom2)
+    r = quad.m_R1.dot(quad.pos_of_control - quad.v_d)
+    W4 = k33 * np.dot(H_p_1, control_app[1] - control_app[2] + np.cross(r, control_app[0]))
+    W5 = k33 * np.dot(H_p_2, control_app[2])
+    # ref1 = k33 * np.linalg.norm(p_1e + p_2e) ** 2
+    # ref2 = k33 * np.linalg.norm(H_p_1) ** 2
+    # ref3 = k33 * np.linalg.norm(H_p_2) ** 2
+    return W1 + W2 + W3 + W4 + W5
+
+
 def W(quad, pendulum):
     R1 = quad.m_R1
     R2 = pendulum.m_R2
@@ -222,9 +174,9 @@ def W(quad, pendulum):
     W2 = (np.linalg.norm(e3 + R2.dot(e3)) ** 2) / 2
     p_1e = np.array([1, 1, 0]) - quad.v_mom1
     p_2e = np.array([1, 1, 0]) - pendulum.v_mom2
-    H_p_1 = quad.v_ang_mom1 + np.cross(-1 * quad.v_d, quad.v_mom1)
+    H_p_1 = quad.v_ang_mom1 + np.cross(-1 * R1.dot(quad.v_d), quad.v_mom1)
     H_p_2 = pendulum.v_ang_mom2 + np.cross(a, pendulum.v_mom2)
-    W3 = 5 * np.linalg.norm(p_1e + p_2e) ** 2 + 5 * np.linalg.norm(H_p_1) ** 2 + 5 * np.linalg.norm(H_p_2) ** 2
+    W3 = (5 * np.linalg.norm(p_1e + p_2e) ** 2) + (5 * np.linalg.norm(H_p_1) ** 2) + (5 * np.linalg.norm(H_p_2) ** 2)
     return W1 + W2 + W3
 
 

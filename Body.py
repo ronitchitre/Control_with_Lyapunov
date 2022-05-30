@@ -17,7 +17,7 @@ class Quad:
         self.m_R1 = m_R1
         self.v_ang_mom1 = v_ang_mom1
         gravity = np.array([0, 0, -9.8])
-        self.f_e_1 = self.m_R1.dot(self.mass1 * gravity)
+        self.f_e_1 = self.mass1 * gravity
         self.pos_of_control = [0, 0.5, 0]
 
 
@@ -29,7 +29,7 @@ class Pendulum:
         self.m_R2 = m_R2
         self.v_ang_mom2 = v_ang_mom2
         gravity = np.array([0, 0, -9.8])
-        self.f_e_2 = self.m_R2.dot(self.mass2 * gravity)
+        self.f_e_2 = self.mass2 * gravity
         c3 = np.array([0, 0, 1])
         self.v_position2 = quad.v_position1 + quad.m_R1.dot(quad.v_d) - (self.m_R2.dot(c3) * (self.length / 2))
         R1 = quad.m_R1
