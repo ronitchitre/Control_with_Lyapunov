@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from Body import *
 from functions import *
-from scipy.integrate import solve_ivp
 from solver_rk4method import rk4method
 
 o1 = np.array([0, 0, 0])
@@ -16,13 +15,13 @@ quad = Quad(o1, R1, mom1, ang_mom1)
 mom2 = np.array([0, 0, 0])
 Q2 = np.array([1, 0, 0, 0])
 # R2 = quaternion_rotation_matrix(Q2)
-R2 = np.eye(3)
+R2 = -1 *  np.eye(3)
 ang_mom2 = np.array([0, 0, 0])
 pendulum = Pendulum(R2, ang_mom2, quad)
 
 ref1 = np.array([[1, 1, 1], [1, 1, 0]])
 ref2 = np.array([[1, 1, 0], [1, 1, 0]])
-k33 = 10
+k33 = 1
 
 
 def system_ode(t, x):
@@ -42,7 +41,7 @@ initial_cond = [o1, R1, mom1, ang_mom1, R2, ang_mom2]
 initial_x = np.empty(6, dtype='object')
 for i in range(len(initial_cond)):
     initial_x[i] = initial_cond[i]
-time = np.linspace(1, 5.01, 100)
+time = np.linspace(1, 10, 100)
 y = rk4method(system_ode, initial_x, time, 6)
 iter = 0
 for i in y:
@@ -50,9 +49,13 @@ for i in y:
     quad = Quad(i[0], i[1], i[2], i[3])
     pendulum = Pendulum(i[4], i[5], quad)
     # print(W_dot(quad, pendulum, ref1, ref2, k33))
-    print(W(quad, pendulum))
+    # print(W(quad, pendulum, ref1, ref2, k33))
+    print(i[0])
     iter +=1
-# s = y[11]
+# s = y[1]
 # quad_fin = Quad(s[0], s[1], s[2], s[3])
 # pend_fin = Pendulum(s[4], s[5], quad_fin)
-# print(control(quad, pend_fin, ref1, ref2, k33)[2])
+# print(control(quad_fin, pend_fin, ref1, ref2, k33)[0])
+# print(control(quad, pend_fin, ref1, ref2, k33)[1])
+
+

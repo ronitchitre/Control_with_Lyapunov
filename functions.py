@@ -82,17 +82,22 @@ def control(quad, pendulum, ref1, ref2, k33):
     R1 = quad.m_R1
     a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
     e3 = np.array([0, 0, 1])
-    if abs(p_1e[2] + p_2e[2]) >= 10 ** -3:
-        f1 = np.dot(o_1e, e3) * p_1e[2] / ((p_1e[2] + p_2e[2]) * quad.mass1) * np.array([0, 0, 1])
-        f1 = np.dot(o_1e, e3) * p_1e[2] / ((p_1e[2] + p_2e[2]) * quad.mass1) * np.array([0, 0, 1])
-    if abs(p_1e[1] + p_2e[1]) >= 10 ** -3:
-        f1 = np.dot(o_1e, e3) * p_1e[2] / ((p_1e[1] + p_2e[1]) * quad.mass1) * np.array([0, 1, 0])
-    if abs(p_1e[0] + p_2e[0]) >= 10 ** -3:
-        f1 = np.dot(o_1e, e3) * p_1e[2] / ((p_1e[0] + p_2e[0]) * quad.mass1) * np.array([1, 0, 0])
-    else:
-        f1 = np.array([0, 0, 0])
-    f_u_1 = (-1 * quad.f_e_1) + (-1 * pendulum.f_e_2) + f1 + p_1e + p_2e
+    # if abs(p_1e[2] + p_2e[2]) == 0:
+    #     f1 = np.dot(o_1e, e3) * p_1e[2] / ((p_1e[2] + p_2e[2]) * quad.mass1 * k33) * np.array([0, 0, 1])
+    # if abs(p_1e[1] + p_2e[1]) == 0:
+    #     f1 = np.dot(o_1e, e3) * p_1e[2] / ((p_1e[1] + p_2e[1]) * quad.mass1 * k33) * np.array([0, 1, 0])
+    # if abs(p_1e[0] + p_2e[0]) == 0:
+    #     f1 = np.dot(o_1e, e3) * p_1e[2] / ((p_1e[0] + p_2e[0]) * quad.mass1 * k33) * np.array([1, 0, 0])
+    # else:
+    #     f1 = np.array([0, 0, 0])
+    # f_u_1 = (-1 * quad.f_e_1) + (-1 * pendulum.f_e_2) + f1 + p_1e + p_2e
     # f_u_1 = (-1 * quad.f_e_1) + (-1 * pendulum.f_e_2)
+    if p_1e[2] + p_1e[2] != 0:
+        f1 = o_1e[2] * p_1e[2] / (k33 * (p_1e[2] + p_2e[2]) * quad.mass1)
+    else:
+        f1 = 0
+    f_u_1 = (-1 * quad.f_e_1[2]) + (-1 * pendulum.f_e_2[2]) + f1 + p_1e[2] + p_2e[2]
+    f_u_1 = np.array([0, 0, f_u_1])
     H_p_2 = pendulum.v_ang_mom2 + np.cross(a, pendulum.v_mom2)
     torq_u_2 = beta(quad, pendulum, k33) - H_p_2
     # torq_u_2 = np.array([0, 0, 0])
@@ -151,7 +156,8 @@ def W_dot(quad, pendulum, ref1, ref2, k33):
     W1 = o_1e[2] * p_1e[2] / quad.mass1
     gamma = np.array([0, 0, 1])
     W2 = np.dot(gamma, hat(omega2).dot(R2).dot(gamma))
-    W3 = k33 * np.dot(p_1e + p_2e, -1 * quad.f_e_1 - pendulum.f_e_2 - control_app[0])
+    # W3 = k33 * np.dot(p_1e + p_2e, -1 * quad.f_e_1 - pendulum.f_e_2 - control_app[0])
+    W3 = k33 * ((p_1e[2] + p_2e[2]) * (-1 * quad.f_e_1[2] - pendulum.f_e_2[2] - control_app[0][2]))
     H_p_1 = quad.v_ang_mom1 + np.cross(-1 * R1.dot(quad.v_d), quad.v_mom1)
     H_p_2 = pendulum.v_ang_mom2 + np.cross(a, pendulum.v_mom2)
     r = quad.m_R1.dot(quad.pos_of_control - quad.v_d)
@@ -163,21 +169,23 @@ def W_dot(quad, pendulum, ref1, ref2, k33):
     return W1 + W2 + W3 + W4 + W5
 
 
-def W(quad, pendulum):
+def W(quad, pendulum, ref1, ref2, k33):
     R1 = quad.m_R1
     R2 = pendulum.m_R2
-    o_1r = np.array([1, 1, 1])
+    o_1r = ref1[0]
     o_1e = o_1r - quad.v_position1
     e3 = np.array([0, 0, 1])
     a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
     W1 = (np.dot(o_1e, e3) ** 2) / 2
     W2 = (np.linalg.norm(e3 + R2.dot(e3)) ** 2) / 2
-    p_1e = np.array([1, 1, 0]) - quad.v_mom1
-    p_2e = np.array([1, 1, 0]) - pendulum.v_mom2
+    p_1e = ref1[0] - quad.v_mom1
+    p_2e = ref2[1] - pendulum.v_mom2
     H_p_1 = quad.v_ang_mom1 + np.cross(-1 * R1.dot(quad.v_d), quad.v_mom1)
     H_p_2 = pendulum.v_ang_mom2 + np.cross(a, pendulum.v_mom2)
-    W3 = (5 * np.linalg.norm(p_1e + p_2e) ** 2) + (5 * np.linalg.norm(H_p_1) ** 2) + (5 * np.linalg.norm(H_p_2) ** 2)
-    return W1 + W2 + W3
+    k33 = k33 / 2
+    W3 = (k33 * np.linalg.norm(H_p_1) ** 2) + (k33 * np.linalg.norm(H_p_2) ** 2)
+    W4 = k33 * (p_1e[2] + p_2e[2]) ** 2
+    return W1 + W2 + W3 + W4
 
 
 if __name__ == "__main__":
