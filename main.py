@@ -15,15 +15,16 @@ quad = Quad(o1, R1, mom1, ang_mom1)
 
 mom2 = np.array([0, 0, 0])
 Q2 = np.array([1, 0, 0, 0])
-# r = R.from_euler('xyz', [10, 20, 30], degrees=True)
-# R2 = r.as_matrix()
-R2 = np.eye(3)
+r = R.from_euler('xyz', [0.1, 0.2, 0.3], degrees=True)
+R2 = r.as_matrix()
+# R2 = np.eye(3)
 ang_mom2 = np.array([0, 0, 0])
 pendulum = Pendulum(R2, ang_mom2, quad)
 
 ref1 = np.array([[1, 1, 1], [1, 1, 0]])
 ref2 = np.array([[1, 1, 0], [1, 1, 0]])
 k33 = 0.01
+tf = 7
 
 
 def system_ode(t, x):
@@ -43,7 +44,7 @@ initial_cond = [o1, R1, mom1, ang_mom1, R2, ang_mom2]
 initial_x = np.empty(6, dtype='object')
 for i in range(len(initial_cond)):
     initial_x[i] = initial_cond[i]
-time = np.linspace(1, 20, 400)
+time = np.linspace(1, 10, 600)
 y = rk4method(system_ode, initial_x, time, 6)
 
 
@@ -52,8 +53,9 @@ y = rk4method(system_ode, initial_x, time, 6)
 #     # print(iter)
 #     quad = Quad(i[0], i[1], i[2], i[3])
 #     pendulum = Pendulum(i[4], i[5], quad)
-#     print(W_dot(quad, pendulum, ref1, ref2, k33))
+#     # print(W_dot(quad, pendulum, ref1, ref2, k33))
 #     # print(W(quad, pendulum, ref1, ref2, k33))
+#     print(control(quad, pendulum, ref1, ref2, k33)[2])
 #     # print(i[0])
 #     iter +=1
 # s = y[1]
@@ -181,9 +183,9 @@ def plot_pend(y, tf, ref1, ref2, k33):
     plt.show()
 
 
-plot_quantity(y, 0, 20, 'position_quad')
-plot_quantity(y, 2, 20, 'mom_quad')
-plot_quantity(y, 3, 20, 'ang_mom_quad')
-plot_pend(y, 20, ref1, ref2, k33)
-# plot_euler(y, 1, 20, 'euler_quad')
-# plot_euler(y, 4, 20, 'euler_pend')
+plot_quantity(y, 0, tf, 'position_quad')
+plot_quantity(y, 2, tf, 'mom_quad')
+plot_quantity(y, 3, tf, 'ang_mom_quad')
+plot_pend(y, 1, ref1, ref2, k33)
+plot_euler(y, 1, 20, 'euler_quad')
+plot_euler(y, 4, 20, 'euler_pend')

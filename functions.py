@@ -82,6 +82,9 @@ def control(quad, pendulum, ref1, ref2, k33):
     R1 = quad.m_R1
     a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
     e3 = np.array([0, 0, 1])
+    inertia1_spatial = R1.dot(quad.m_inertia1).dot(R1.T)
+    inertia1_spatial_inv = np.linalg.inv(inertia1_spatial)
+    omega1 = inertia1_spatial_inv.dot(quad.v_ang_mom1)
     # if abs(p_1e[2] + p_2e[2]) == 0:
     #     f1 = np.dot(o_1e, e3) * p_1e[2] / ((p_1e[2] + p_2e[2]) * quad.mass1 * k33) * np.array([0, 0, 1])
     # if abs(p_1e[1] + p_2e[1]) == 0:
@@ -100,12 +103,11 @@ def control(quad, pendulum, ref1, ref2, k33):
     f_u_1 = np.array([0, 0, f_u_1])
     H_p_2 = pendulum.v_ang_mom2 + np.cross(a, pendulum.v_mom2)
     torq_u_2 = -1 * beta(quad, pendulum, k33) - H_p_2 - np.cross(a, pendulum.f_e_2)
+    c = quad.v_mom1 / quad.mass1 + hat(omega1).dot(R1).dot(quad.v_d) - (pendulum.v_mom2 / pendulum.mass2)
+    torq_u_2 += np.cross(c, pendulum.v_mom2)
     # torq_u_2 = np.array([0, 0, 0])
-    inertia1_spatial = R1.dot(quad.m_inertia1).dot(R1.T)
-    inertia1_spatial_inv = np.linalg.inv(inertia1_spatial)
-    omega1 = inertia1_spatial_inv.dot(quad.v_ang_mom1)
-    H_p_1 = quad.v_ang_mom1 + np.cross(-1 * R1.dot(quad.v_d), quad.v_mom1)
     r = R1.dot(quad.pos_of_control - quad.v_d)
+    H_p_1 = quad.v_ang_mom1 + np.cross(-1 * R1.dot(quad.v_d), quad.v_mom1)
     torq_u_1 = torq_u_2 - np.cross(r, f_u_1) - H_p_1 + np.cross(R1.dot(quad.v_d), quad.f_e_1)
     torq_u_1 += np.cross(hat(omega1).dot(R1).dot(quad.v_d), quad.v_mom1)
     # torq_u_1 = torq_u_2 - np.cross(r, f_u_1)
@@ -169,7 +171,8 @@ def W_dot(quad, pendulum, ref1, ref2, k33):
     H_p_2 = pendulum.v_ang_mom2 + np.cross(a, pendulum.v_mom2)
     r = quad.m_R1.dot(quad.pos_of_control - quad.v_d)
     W4 = k33 * np.dot(H_p_1, control_app[1] - control_app[2] + np.cross(r, control_app[0]) - np.cross(R1.dot(quad.v_d), quad.f_e_1) - np.cross(hat(omega1).dot(R1).dot(quad.v_d), quad.v_mom1))
-    W5 = k33 * np.dot(H_p_2, control_app[2] + np.cross(a, pendulum.f_e_2))
+    c = quad.v_mom1 / quad.mass1 + hat(omega1).dot(R1).dot(quad.v_d) - (pendulum.v_mom2 / pendulum.mass2)
+    W5 = k33 * np.dot(H_p_2, control_app[2] + np.cross(a, pendulum.f_e_2) - np.cross(c, pendulum.v_mom2))
     ref1 = k33 * (p_1e[2] + p_2e[2]) ** 2
     ref2 = k33 * np.linalg.norm(H_p_1) ** 2
     ref3 = k33 * np.linalg.norm(H_p_2) ** 2
