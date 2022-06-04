@@ -40,4 +40,4 @@ class Pendulum:
         inertia2_spatial_inv = np.linalg.inv(inertia2_spatial)
         omega1 = inertia1_spatial_inv.dot(quad.v_ang_mom1)
         omega2 = inertia2_spatial_inv.dot(self.v_ang_mom2)
-        self.v_mom2 = quad.v_mom1 / quad.mass1 + hat(omega1).dot(R1).dot(quad.v_d) + hat(omega2).dot(a)
+        self.v_mom2 = (quad.v_mom1 / quad.mass1 + hat(omega1).dot(R1).dot(quad.v_d) + hat(omega2).dot(a)) * self.mass2

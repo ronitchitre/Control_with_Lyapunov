@@ -7,7 +7,7 @@ from scipy.spatial.transform import Rotation as R
 
 o1 = np.array([0, 0, 0])
 mom1 = np.array([0, 0, 0])
-ang_mom1 = np.array([0, 0, 0])
+ang_mom1 = np.array([0., 0., 0.])
 Q1 = np.array([1, 0, 0, 0])
 # R1 = quaternion_rotation_matrix(Q1)
 R1 = np.eye(3)
@@ -15,24 +15,23 @@ quad = Quad(o1, R1, mom1, ang_mom1)
 
 mom2 = np.array([0, 0, 0])
 Q2 = np.array([1, 0, 0, 0])
-r = R.from_euler('xyz', [0.1, 0.2, 0.3], degrees=True)
-R2 = r.as_matrix()
-# R2 = np.eye(3)
-ang_mom2 = np.array([0, 0, 0])
+# r = R.from_euler('xyz', [10, 20, 30], degrees=True)
+# R2 = r.as_matrix()
+R2 = np.eye(3)
+ang_mom2 = np.array([0., 0., 0.])
 pendulum = Pendulum(R2, ang_mom2, quad)
 
-ref1 = np.array([[1, 1, 1], [1, 1, 0]])
-ref2 = np.array([[1, 1, 0], [1, 1, 0]])
+ref1 = np.array([[1, 1, 1], [0, 0, 0]])
+ref2 = np.array([[1, 1, 0], [0, 0, 0]])
 k33 = 0.01
-tf = 7
+tf = 3
 
 
 def system_ode(t, x):
-    # R1 = quaternion_rotation_matrix(x[1])
     quad = Quad(x[0], x[1], x[2], x[3])
-    # R2 = quaternion_rotation_matrix(x[4])
     pendulum = Pendulum(x[4], x[5], quad)
     x_dot = dynamics(quad, pendulum, ref1, ref2, k33)
+    # print(np.linalg.det(x[4]))
     return x_dot
 
 
@@ -44,7 +43,7 @@ initial_cond = [o1, R1, mom1, ang_mom1, R2, ang_mom2]
 initial_x = np.empty(6, dtype='object')
 for i in range(len(initial_cond)):
     initial_x[i] = initial_cond[i]
-time = np.linspace(1, 10, 600)
+time = np.linspace(1, tf, 1000)
 y = rk4method(system_ode, initial_x, time, 6)
 
 
@@ -111,21 +110,26 @@ def plot_pend(y, tf, ref1, ref2, k33):
     resulta = np.zeros([N, 3])
     resulto2 = np.zeros([N, 3])
     resultp2 = np.zeros([N, 3])
-    resulta_norm = np.zeros([N, 1])
     resultW = np.zeros([N, 1])
     resultW_dot = np.zeros([N, 1])
+    resultfu = np.zeros([N, 3])
+    resulttorqu1 = np.zeros([N, 3])
+    resulttorqu2 = np.zeros([N, 3])
     for i in range(N):
         quad = Quad(y[i][0], y[i][1], y[i][2], y[i][3])
         pendulum = Pendulum(y[i][4], y[i][5], quad)
         R1 = quad.m_R1
         R2 = pendulum.m_R2
         a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
+        control_app = control(quad, pendulum, ref1, ref2, k33)
         resulta[i] = a
         resulto2[i] = pendulum.v_position2
         resultp2[i] = pendulum.v_mom2
-        resulta_norm[i] = np.linalg.norm(a)
         resultW[i] = W(quad, pendulum, ref1, ref2, k33)
         resultW_dot[i] = W_dot(quad, pendulum, ref1, ref2, k33)
+        resultfu[i] = control_app[0]
+        resulttorqu1[i] = control_app[1]
+        resulttorqu2[i] = control_app[2]
 
     resulto21 = resulto2[:, 0]
     resulto22 = resulto2[:, 1]
@@ -166,9 +170,30 @@ def plot_pend(y, tf, ref1, ref2, k33):
     plt.xlabel('time')
     plt.show()
 
-    plt.plot(time, resulta_norm)
-    plt.title('half length of pendulum')
-    plt.ylabel('length')
+    plt.plot(time, resultfu[:, 0])
+    plt.plot(time, resultfu[:, 1])
+    plt.plot(time, resultfu[:, 2])
+    plt.title('Control force')
+    plt.legend(['x', 'y', 'z'])
+    plt.ylabel('force')
+    plt.xlabel('time')
+    plt.show()
+
+    plt.plot(time, resulttorqu1[:, 0])
+    plt.plot(time, resulttorqu1[:, 1])
+    plt.plot(time, resulttorqu1[:, 2])
+    plt.legend(['x', 'y', 'z'])
+    plt.title('Control torq on quad')
+    plt.ylabel('torq')
+    plt.xlabel('time')
+    plt.show()
+
+    plt.plot(time, resulttorqu2[:, 0])
+    plt.plot(time, resulttorqu2[:, 1])
+    plt.plot(time, resulttorqu2[:, 2])
+    plt.legend(['x', 'y', 'z'])
+    plt.title('Control torq on pend')
+    plt.ylabel('torq')
     plt.xlabel('time')
     plt.show()
 
@@ -186,6 +211,6 @@ def plot_pend(y, tf, ref1, ref2, k33):
 plot_quantity(y, 0, tf, 'position_quad')
 plot_quantity(y, 2, tf, 'mom_quad')
 plot_quantity(y, 3, tf, 'ang_mom_quad')
-plot_pend(y, 1, ref1, ref2, k33)
-plot_euler(y, 1, 20, 'euler_quad')
-plot_euler(y, 4, 20, 'euler_pend')
+plot_pend(y, tf, ref1, ref2, k33)
+# plot_euler(y, 1, 20, 'euler_quad')
+# plot_euler(y, 4, 20, 'euler_pend')
