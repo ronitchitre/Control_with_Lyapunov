@@ -16,9 +16,9 @@ quad = Quad(o1, R1, mom1, ang_mom1)
 
 mom2 = np.array([0, 0, 0])
 Q2 = np.array([1, 0, 0, 0])
-# r = R.from_euler('xyz', [1, 2, 5], degrees=True)
-# R2 = r.as_matrix()
-R2 = np.eye(3)
+r = R.from_euler('xyz', [10, 20, 50], degrees=True)
+R2 = r.as_matrix()
+# R2 = np.eye(3)
 ang_mom2 = np.array([0., 0., 0.])
 pendulum = Pendulum(R2, ang_mom2, quad)
 
@@ -44,7 +44,7 @@ initial_cond = [o1, R1, mom1, ang_mom1, R2, ang_mom2]
 initial_x = np.empty(6, dtype='object')
 for i in range(len(initial_cond)):
     initial_x[i] = initial_cond[i]
-time = np.linspace(1, tf, (tf * 1000))
+time = np.linspace(1, tf, (1000 * tf))
 y = rk4method(system_ode, initial_x, time, 6)
 
 
