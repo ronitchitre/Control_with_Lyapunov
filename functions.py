@@ -28,7 +28,7 @@ def beta(quad, pendulum, k33):
         return -1 * np.dot(b1, b2) / (k33 * b3[2]) * np.array([0, 0, 1])
     if abs(b3[1]) >= 10 ** -3:
         return -1 * np.dot(b1, b2) / (k33 * b3[1]) * np.array([0, 1, 0])
-    if abs(b3[1]) >= 10 ** -3:
+    if abs(b3[0]) >= 10 ** -3:
         return -1 * np.dot(b1, b2) / (k33 * b3[0]) * np.array([1, 0, 0])
     else:
         return np.array([0, 0, 0])
@@ -50,7 +50,7 @@ def constraint_force(quad, pendulum, control):
     v_omega1_hat = hat(v_omega1)
     v_omega2_hat = hat(v_omega2)
     b1 = -1 * (f_u_1 + quad.f_e_1) / quad.mass1
-    b2 = inertia1_spatial_inv.dot(hat(torq_u_1 - torq_u_2 + np.cross(quad.pos_of_control, f_u_1))).dot(R1.dot(quad.v_d))
+    b2 = inertia1_spatial_inv.dot(hat(torq_u_1 - torq_u_2 + np.cross(R1.dot(quad.pos_of_control), f_u_1))).dot(R1.dot(quad.v_d))
     b2 = -1 * b2
     b3 = pendulum.f_e_2 / pendulum.mass2
     b4 = -1 * v_omega1_hat.dot(v_omega1_hat).dot(R1).dot(quad.v_d)
@@ -77,6 +77,7 @@ def control(quad, pendulum, ref1, ref2, k33):
     o_2r = ref2[0]
     p_2r = ref2[1]
     o_1e = o_1r - quad.v_position1
+    o_2e = o_2r - pendulum.v_position2
     p_1e = p_1r - quad.v_mom1
     p_2e = p_2r - pendulum.v_mom2
     R1 = quad.m_R1
@@ -94,13 +95,17 @@ def control(quad, pendulum, ref1, ref2, k33):
     # else:
     #     f1 = np.array([0, 0, 0])
     # f_u_1 = (-1 * quad.f_e_1) + (-1 * pendulum.f_e_2) + f1 + p_1e + p_2e
-    # f_u_1 = (-1 * quad.f_e_1) + (-1 * pendulum.f_e_2)
+
     if p_1e[2] + p_1e[2] != 0:
         f1 = o_1e[2] * p_1e[2] / (k33 * (p_1e[2] + p_2e[2]) * quad.mass1)
     else:
         f1 = 0
     f_u_1 = (-1 * quad.f_e_1[2]) + (-1 * pendulum.f_e_2[2]) + f1 + p_1e[2] + p_2e[2]
     f_u_1 = np.array([0, 0, f_u_1])
+
+    # f_u_1 = (-1 * quad.f_e_1) - pendulum.f_e_2 + (100 * abs(o_1e[2]) * (p_1e[2] + p_2e[2])) * np.array([0, 0, 1])
+    # f_u_1 += ((quad.mass1 * o_1e[2] + pendulum.mass2 * o_2e[2]) / k33) * np.array([0, 0, 1])
+
     H_p_2 = pendulum.v_ang_mom2 + np.cross(a, pendulum.v_mom2)
     torq_u_2 = -1 * beta(quad, pendulum, k33) - H_p_2 - np.cross(a, pendulum.f_e_2)
     c = quad.v_mom1 / quad.mass1 + hat(omega1).dot(R1).dot(quad.v_d) - (pendulum.v_mom2 / pendulum.mass2)
@@ -156,6 +161,7 @@ def W_dot(quad, pendulum, ref1, ref2, k33):
     o_2r = ref2[0]
     p_2r = ref2[1]
     o_1e = o_1r - quad.v_position1
+    o_2e = o_2r - pendulum.v_position2
     p_1e = p_1r - quad.v_mom1
     p_2e = p_2r - pendulum.v_mom2
     inertia1_spatial = R1.dot(quad.m_inertia1).dot(R1.T)
@@ -163,6 +169,7 @@ def W_dot(quad, pendulum, ref1, ref2, k33):
     omega1 = inertia1_spatial_inv.dot(quad.v_ang_mom1)
     omega2 = R2.dot(np.linalg.inv(pendulum.m_inertia2)).dot(R2.T).dot(pendulum.v_ang_mom2)
     W1 = o_1e[2] * p_1e[2] / quad.mass1
+    # W1 = (quad.mass1 * o_1e[2] + pendulum.mass2 * o_2e[2]) * (p_1e[2] + p_2e[2])
     gamma = np.array([0, 0, 1])
     W2 = -1 * np.dot(gamma, hat(omega2).dot(R2).dot(gamma))
     W3 = k33 * np.dot(p_1e + p_2e, -1 * quad.f_e_1 - pendulum.f_e_2 - control_app[0])
@@ -183,10 +190,13 @@ def W(quad, pendulum, ref1, ref2, k33):
     R1 = quad.m_R1
     R2 = pendulum.m_R2
     o_1r = ref1[0]
+    o_2r = ref2[0]
     o_1e = o_1r - quad.v_position1
+    o_2e = o_2r - pendulum.v_position2
     e3 = np.array([0, 0, 1])
     a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
     W1 = (np.dot(o_1e, e3) ** 2) / 2
+    # W1 = (np.dot(quad.mass1 * o_1e + pendulum.mass2 * o_2e, e3) ** 2) / 2
     W2 = (np.linalg.norm(e3 - R2.dot(e3)) ** 2) / 2
     p_1e = ref1[1] - quad.v_mom1
     p_2e = ref2[1] - pendulum.v_mom2

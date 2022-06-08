@@ -4,6 +4,7 @@ from Body import *
 from functions import *
 from solver_rk4method import rk4method
 from scipy.spatial.transform import Rotation as R
+print('done')
 
 o1 = np.array([0, 0, 0])
 mom1 = np.array([0, 0, 0])
@@ -15,7 +16,7 @@ quad = Quad(o1, R1, mom1, ang_mom1)
 
 mom2 = np.array([0, 0, 0])
 Q2 = np.array([1, 0, 0, 0])
-# r = R.from_euler('xyz', [10, 20, 30], degrees=True)
+# r = R.from_euler('xyz', [1, 2, 5], degrees=True)
 # R2 = r.as_matrix()
 R2 = np.eye(3)
 ang_mom2 = np.array([0., 0., 0.])
@@ -24,7 +25,7 @@ pendulum = Pendulum(R2, ang_mom2, quad)
 ref1 = np.array([[1, 1, 1], [0, 0, 0]])
 ref2 = np.array([[1, 1, 0], [0, 0, 0]])
 k33 = 0.01
-tf = 3
+tf = 20
 
 
 def system_ode(t, x):
@@ -43,7 +44,7 @@ initial_cond = [o1, R1, mom1, ang_mom1, R2, ang_mom2]
 initial_x = np.empty(6, dtype='object')
 for i in range(len(initial_cond)):
     initial_x[i] = initial_cond[i]
-time = np.linspace(1, tf, 1000)
+time = np.linspace(1, tf, (tf * 1000))
 y = rk4method(system_ode, initial_x, time, 6)
 
 
@@ -54,8 +55,9 @@ y = rk4method(system_ode, initial_x, time, 6)
 #     pendulum = Pendulum(i[4], i[5], quad)
 #     # print(W_dot(quad, pendulum, ref1, ref2, k33))
 #     # print(W(quad, pendulum, ref1, ref2, k33))
-#     print(control(quad, pendulum, ref1, ref2, k33)[2])
+#     # print(control(quad, pendulum, ref1, ref2, k33)[2])
 #     # print(i[0])
+#     print(np.linalg.det(i[4]), iter)
 #     iter +=1
 # s = y[1]
 # quad_fin = Quad(s[0], s[1], s[2], s[3])
@@ -80,6 +82,7 @@ def plot_quantity(y, k, tf, title):
     plt.title(title)
     plt.ylabel(title)
     plt.xlabel('time')
+    plt.savefig(f'{title}.jpeg')
     plt.show()
 
 
@@ -115,6 +118,7 @@ def plot_pend(y, tf, ref1, ref2, k33):
     resultfu = np.zeros([N, 3])
     resulttorqu1 = np.zeros([N, 3])
     resulttorqu2 = np.zeros([N, 3])
+    resultdet = np.zeros([N, 3])
     for i in range(N):
         quad = Quad(y[i][0], y[i][1], y[i][2], y[i][3])
         pendulum = Pendulum(y[i][4], y[i][5], quad)
@@ -130,6 +134,7 @@ def plot_pend(y, tf, ref1, ref2, k33):
         resultfu[i] = control_app[0]
         resulttorqu1[i] = control_app[1]
         resulttorqu2[i] = control_app[2]
+        resultdet[i] = np.linalg.det(R2)
 
     resulto21 = resulto2[:, 0]
     resulto22 = resulto2[:, 1]
@@ -142,6 +147,7 @@ def plot_pend(y, tf, ref1, ref2, k33):
     plt.title('pos_pendulum')
     plt.ylabel('position')
     plt.xlabel('time')
+    plt.savefig('o2.jpeg')
     plt.show()
 
     resultp21 = resultp2[:, 0]
@@ -155,6 +161,7 @@ def plot_pend(y, tf, ref1, ref2, k33):
     plt.title('mom_pendulum')
     plt.ylabel('mom_pendulum')
     plt.xlabel('time')
+    plt.savefig('p2.jpeg')
     plt.show()
 
     resulta1 = resulta[:, 0]
@@ -168,6 +175,7 @@ def plot_pend(y, tf, ref1, ref2, k33):
     plt.title('o2 - o1 - R1d')
     plt.ylabel('position')
     plt.xlabel('time')
+    plt.savefig('ori.jpeg')
     plt.show()
 
     plt.plot(time, resultfu[:, 0])
@@ -177,6 +185,7 @@ def plot_pend(y, tf, ref1, ref2, k33):
     plt.legend(['x', 'y', 'z'])
     plt.ylabel('force')
     plt.xlabel('time')
+    plt.savefig('fu.jpeg')
     plt.show()
 
     plt.plot(time, resulttorqu1[:, 0])
@@ -186,6 +195,7 @@ def plot_pend(y, tf, ref1, ref2, k33):
     plt.title('Control torq on quad')
     plt.ylabel('torq')
     plt.xlabel('time')
+    plt.savefig('torq1.jpeg')
     plt.show()
 
     plt.plot(time, resulttorqu2[:, 0])
@@ -195,16 +205,24 @@ def plot_pend(y, tf, ref1, ref2, k33):
     plt.title('Control torq on pend')
     plt.ylabel('torq')
     plt.xlabel('time')
+    plt.savefig('torq2.jpeg')
     plt.show()
 
     plt.plot(time, resultW)
     plt.title('W')
     plt.xlabel('time')
+    plt.savefig('W.jpeg')
     plt.show()
 
     plt.plot(time, resultW_dot)
     plt.title('W_dot')
     plt.xlabel('time')
+    plt.savefig('W_dot.jpeg')
+    plt.show()
+
+    plt.plot(time, resultdet)
+    plt.title('Det of R2')
+    plt.savefig('det_R2.jpeg')
     plt.show()
 
 
