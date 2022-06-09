@@ -119,116 +119,132 @@ def plot_pend(y, tf, ref1, ref2, k33):
     resulttorqu1 = np.zeros([N, 3])
     resulttorqu2 = np.zeros([N, 3])
     resultdet = np.zeros([N, 3])
+    resultpi2 = np.zeros([N, 3])
     for i in range(N):
         quad = Quad(y[i][0], y[i][1], y[i][2], y[i][3])
         pendulum = Pendulum(y[i][4], y[i][5], quad)
-        R1 = quad.m_R1
-        R2 = pendulum.m_R2
-        a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
-        control_app = control(quad, pendulum, ref1, ref2, k33)
-        resulta[i] = a
-        resulto2[i] = pendulum.v_position2
-        resultp2[i] = pendulum.v_mom2
-        resultW[i] = W(quad, pendulum, ref1, ref2, k33)
-        resultW_dot[i] = W_dot(quad, pendulum, ref1, ref2, k33)
-        resultfu[i] = control_app[0]
-        resulttorqu1[i] = control_app[1]
-        resulttorqu2[i] = control_app[2]
-        resultdet[i] = np.linalg.det(R2)
+        # R1 = quad.m_R1
+        # R2 = pendulum.m_R2
+        # a = pendulum.v_position2 - quad.v_position1 - R1.dot(quad.v_d)
+        # control_app = control(quad, pendulum, ref1, ref2, k33)
+        # resulta[i] = a
+        # resulto2[i] = pendulum.v_position2
+        # resultp2[i] = pendulum.v_mom2
+        # resultW[i] = W(quad, pendulum, ref1, ref2, k33)
+        # resultW_dot[i] = W_dot(quad, pendulum, ref1, ref2, k33)
+        # resultfu[i] = control_app[0]
+        # resulttorqu1[i] = control_app[1]
+        # resulttorqu2[i] = control_app[2]
+        # resultdet[i] = np.linalg.det(R2)
+        resultpi2[i] = pendulum.v_ang_mom2
 
-    resulto21 = resulto2[:, 0]
-    resulto22 = resulto2[:, 1]
-    resulto23 = resulto2[:, 2]
+    # resulto21 = resulto2[:, 0]
+    # resulto22 = resulto2[:, 1]
+    # resulto23 = resulto2[:, 2]
+    # time = np.linspace(0, tf, N)
+    # plt.plot(time, resulto21)
+    # plt.plot(time, resulto22)
+    # plt.plot(time, resulto23)
+    # plt.legend(['x', 'y', 'z'])
+    # plt.title('pos_pendulum')
+    # plt.ylabel('position')
+    # plt.xlabel('time')
+    # plt.savefig('o2.jpeg')
+    # plt.show()
+
+    # resultp21 = resultp2[:, 0]
+    # resultp22 = resultp2[:, 1]
+    # resultp23 = resultp2[:, 2]
+    # time = np.linspace(0, tf, N)
+    # plt.plot(time, resultp21)
+    # plt.plot(time, resultp22)
+    # plt.plot(time, resultp23)
+    # plt.legend(['x', 'y', 'z'])
+    # plt.title('mom_pendulum')
+    # plt.ylabel('mom_pendulum')
+    # plt.xlabel('time')
+    # plt.savefig('p2.jpeg')
+    # plt.show()
+
+    resultpi21 = resultpi2[:, 0]
+    resultpi22 = resultpi2[:, 1]
+    resultpi23 = resultpi2[:, 2]
     time = np.linspace(0, tf, N)
-    plt.plot(time, resulto21)
-    plt.plot(time, resulto22)
-    plt.plot(time, resulto23)
+    plt.plot(time, resultpi21)
+    plt.plot(time, resultpi22)
+    plt.plot(time, resultpi23)
     plt.legend(['x', 'y', 'z'])
-    plt.title('pos_pendulum')
-    plt.ylabel('position')
+    plt.title('ang_mom_pendulum')
+    plt.ylabel('ang_mom_pendulum')
     plt.xlabel('time')
-    plt.savefig('o2.jpeg')
+    plt.savefig('ang_mom_pend.jpeg')
     plt.show()
 
-    resultp21 = resultp2[:, 0]
-    resultp22 = resultp2[:, 1]
-    resultp23 = resultp2[:, 2]
-    time = np.linspace(0, tf, N)
-    plt.plot(time, resultp21)
-    plt.plot(time, resultp22)
-    plt.plot(time, resultp23)
-    plt.legend(['x', 'y', 'z'])
-    plt.title('mom_pendulum')
-    plt.ylabel('mom_pendulum')
-    plt.xlabel('time')
-    plt.savefig('p2.jpeg')
-    plt.show()
+    # resulta1 = resulta[:, 0]
+    # resulta2 = resulta[:, 1]
+    # resulta3 = resulta[:, 2]
+    # time = np.linspace(0, tf, N)
+    # plt.plot(time, resulta1)
+    # plt.plot(time, resulta2)
+    # plt.plot(time, resulta3)
+    # plt.legend(['x', 'y', 'z'])
+    # plt.title('o2 - o1 - R1d')
+    # plt.ylabel('position')
+    # plt.xlabel('time')
+    # plt.savefig('ori.jpeg')
+    # plt.show()
 
-    resulta1 = resulta[:, 0]
-    resulta2 = resulta[:, 1]
-    resulta3 = resulta[:, 2]
-    time = np.linspace(0, tf, N)
-    plt.plot(time, resulta1)
-    plt.plot(time, resulta2)
-    plt.plot(time, resulta3)
-    plt.legend(['x', 'y', 'z'])
-    plt.title('o2 - o1 - R1d')
-    plt.ylabel('position')
-    plt.xlabel('time')
-    plt.savefig('ori.jpeg')
-    plt.show()
+    # plt.plot(time, resultfu[:, 0])
+    # plt.plot(time, resultfu[:, 1])
+    # plt.plot(time, resultfu[:, 2])
+    # plt.title('Control force')
+    # plt.legend(['x', 'y', 'z'])
+    # plt.ylabel('force')
+    # plt.xlabel('time')
+    # plt.savefig('fu.jpeg')
+    # plt.show()
 
-    plt.plot(time, resultfu[:, 0])
-    plt.plot(time, resultfu[:, 1])
-    plt.plot(time, resultfu[:, 2])
-    plt.title('Control force')
-    plt.legend(['x', 'y', 'z'])
-    plt.ylabel('force')
-    plt.xlabel('time')
-    plt.savefig('fu.jpeg')
-    plt.show()
+    # plt.plot(time, resulttorqu1[:, 0])
+    # plt.plot(time, resulttorqu1[:, 1])
+    # plt.plot(time, resulttorqu1[:, 2])
+    # plt.legend(['x', 'y', 'z'])
+    # plt.title('Control torq on quad')
+    # plt.ylabel('torq')
+    # plt.xlabel('time')
+    # plt.savefig('torq1.jpeg')
+    # plt.show()
+    #
+    # plt.plot(time, resulttorqu2[:, 0])
+    # plt.plot(time, resulttorqu2[:, 1])
+    # plt.plot(time, resulttorqu2[:, 2])
+    # plt.legend(['x', 'y', 'z'])
+    # plt.title('Control torq on pend')
+    # plt.ylabel('torq')
+    # plt.xlabel('time')
+    # plt.savefig('torq2.jpeg')
+    # plt.show()
 
-    plt.plot(time, resulttorqu1[:, 0])
-    plt.plot(time, resulttorqu1[:, 1])
-    plt.plot(time, resulttorqu1[:, 2])
-    plt.legend(['x', 'y', 'z'])
-    plt.title('Control torq on quad')
-    plt.ylabel('torq')
-    plt.xlabel('time')
-    plt.savefig('torq1.jpeg')
-    plt.show()
-
-    plt.plot(time, resulttorqu2[:, 0])
-    plt.plot(time, resulttorqu2[:, 1])
-    plt.plot(time, resulttorqu2[:, 2])
-    plt.legend(['x', 'y', 'z'])
-    plt.title('Control torq on pend')
-    plt.ylabel('torq')
-    plt.xlabel('time')
-    plt.savefig('torq2.jpeg')
-    plt.show()
-
-    plt.plot(time, resultW)
-    plt.title('W')
-    plt.xlabel('time')
-    plt.savefig('W.jpeg')
-    plt.show()
-
-    plt.plot(time, resultW_dot)
-    plt.title('W_dot')
-    plt.xlabel('time')
-    plt.savefig('W_dot.jpeg')
-    plt.show()
-
-    plt.plot(time, resultdet)
-    plt.title('Det of R2')
-    plt.savefig('det_R2.jpeg')
-    plt.show()
+    # plt.plot(time, resultW)
+    # plt.title('W')
+    # plt.xlabel('time')
+    # plt.savefig('W.jpeg')
+    # plt.show()
+    #
+    # plt.plot(time, resultW_dot)
+    # plt.title('W_dot')
+    # plt.xlabel('time')
+    # plt.savefig('W_dot.jpeg')
+    # plt.show()
+    #
+    # plt.plot(time, resultdet)
+    # plt.title('Det of R2')
+    # plt.savefig('det_R2.jpeg')
+    # plt.show()
 
 
-plot_quantity(y, 0, tf, 'position_quad')
-plot_quantity(y, 2, tf, 'mom_quad')
-plot_quantity(y, 3, tf, 'ang_mom_quad')
+# plot_quantity(y, 0, tf, 'position_quad')
+# plot_quantity(y, 2, tf, 'mom_quad')
+# plot_quantity(y, 3, tf, 'ang_mom_quad')
 plot_pend(y, tf, ref1, ref2, k33)
 # plot_euler(y, 1, 20, 'euler_quad')
 # plot_euler(y, 4, 20, 'euler_pend')
