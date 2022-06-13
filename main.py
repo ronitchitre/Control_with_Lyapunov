@@ -86,7 +86,7 @@ def plot_quantity(y, k, tf, title):
     plt.title(title)
     plt.ylabel(title)
     plt.xlabel('time')
-    plt.savefig(f'{title}.jpeg')
+    # plt.savefig(f'{title}.jpeg')
     plt.show()
 
 
@@ -153,7 +153,7 @@ def plot_pend(y, tf, ref1, ref2, k33):
     plt.title('pos_pendulum')
     plt.ylabel('position')
     plt.xlabel('time')
-    plt.savefig('o2.jpeg')
+    # plt.savefig('o2.jpeg')
     plt.show()
 
     resultp21 = resultp2[:, 0]
@@ -167,7 +167,7 @@ def plot_pend(y, tf, ref1, ref2, k33):
     plt.title('mom_pendulum')
     plt.ylabel('mom_pendulum')
     plt.xlabel('time')
-    plt.savefig('p2.jpeg')
+    # plt.savefig('p2.jpeg')
     plt.show()
 
     resultpi21 = resultpi2[:, 0]
@@ -181,7 +181,7 @@ def plot_pend(y, tf, ref1, ref2, k33):
     plt.title('ang_mom_pendulum')
     plt.ylabel('ang_mom_pendulum')
     plt.xlabel('time')
-    plt.savefig('ang_mom_pend.jpeg')
+    # plt.savefig('ang_mom_pend.jpeg')
     plt.show()
 
     resulta1 = resulta[:, 0]
@@ -195,7 +195,7 @@ def plot_pend(y, tf, ref1, ref2, k33):
     plt.title('o2 - o1 - R1d')
     plt.ylabel('position')
     plt.xlabel('time')
-    plt.savefig('ori.jpeg')
+    # plt.savefig('ori.jpeg')
     plt.show()
 
     plt.plot(time, resultfu[:, 0])
@@ -205,7 +205,7 @@ def plot_pend(y, tf, ref1, ref2, k33):
     plt.legend(['x', 'y', 'z'])
     plt.ylabel('force')
     plt.xlabel('time')
-    plt.savefig('fu.jpeg')
+    # plt.savefig('fu.jpeg')
     plt.show()
 
     plt.plot(time, resulttorqu1[:, 0])
@@ -215,7 +215,7 @@ def plot_pend(y, tf, ref1, ref2, k33):
     plt.title('Control torq on quad')
     plt.ylabel('torq')
     plt.xlabel('time')
-    plt.savefig('torq1.jpeg')
+    # plt.savefig('torq1.jpeg')
     plt.show()
     #
     plt.plot(time, resulttorqu2[:, 0])
@@ -225,19 +225,19 @@ def plot_pend(y, tf, ref1, ref2, k33):
     plt.title('Control torq on pend')
     plt.ylabel('torq')
     plt.xlabel('time')
-    plt.savefig('torq2.jpeg')
+    # plt.savefig('torq2.jpeg')
     plt.show()
 
     plt.plot(time, resultW)
     plt.title('W')
     plt.xlabel('time')
-    plt.savefig('W.jpeg')
+    # plt.savefig('W.jpeg')
     plt.show()
     #
     plt.plot(time, resultW_dot)
     plt.title('W_dot')
     plt.xlabel('time')
-    plt.savefig('W_dot.jpeg')
+    # plt.savefig('W_dot.jpeg')
     plt.show()
 
     # plt.plot(time, resultdet)
