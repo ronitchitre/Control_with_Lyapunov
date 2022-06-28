@@ -10,15 +10,15 @@ def hat(v_u):
 class Quad:
     def __init__(self, v_position1, m_R1, v_mom1, v_ang_mom1):
         self.v_position1 = v_position1
-        self.m_inertia1 = np.eye(3)
+        self.m_inertia1 = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
         self.v_mom1 = v_mom1
         self.mass1 = 6
-        self.v_d = np.array([0, 0, -0.5])
+        self.v_d = np.array([0, 0, 0])
         self.m_R1 = m_R1
         self.v_ang_mom1 = v_ang_mom1
         gravity = np.array([0, 0, -9.8])
         self.f_e_1 = self.mass1 * gravity
-        self.pos_of_control = [0, 0.5, 0]
+        self.pos_of_control = [0, 0, 0]
 
 
 class Pendulum:
