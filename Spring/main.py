@@ -18,7 +18,7 @@ R1 = np.eye(3)
 quad = Quad(o1, R1, mom1, ang_mom1)
 
 mom2 = np.array([0, 0, 0])
-r2 = R.from_euler('xyz', [10, 20, 30], degrees=True)
+r2 = R.from_euler('xyz', [40, 20, 30], degrees=True)
 R2 = r2.as_matrix()
 # R2 = np.eye(3)
 c3 = np.array([0, 0, 1])
@@ -48,16 +48,17 @@ initial_cond = [o1, R1, mom1, ang_mom1, o2, R2, mom2, ang_mom2]
 initial_x = np.empty(8, dtype='object')
 for i in range(len(initial_cond)):
     initial_x[i] = initial_cond[i]
-time = np.linspace(1, tf, 15000)
+time = np.linspace(0, tf, 10000)
 y = rk4method(system_ode, initial_x, time, 8)
 
-# for i in y:
-#     # print(iter)
-#     quad = Quad(i[0], i[1], i[2], i[3])
-#     pendulum = Pendulum(i[4], i[5], i[6], i[7])
-#     inertia_2_inv = np.linalg.norm(pendulum.inertia2)
-#     inertia_2_inv_spatial = pendulum.R2.dot(inertia_2_inv).dot(pendulum.R2.T)
-#     print(pendulum.R2[:, 2])
+for i in y:
+    # print(iter)
+    quad = Quad(i[0], i[1], i[2], i[3])
+    pendulum = Pendulum(i[4], i[5], i[6], i[7])
+    # inertia_2_inv = np.linalg.norm(pendulum.inertia2)
+    # inertia_2_inv_spatial = pendulum.R2.dot(inertia_2_inv).dot(pendulum.R2.T)
+    o_2e = ref2[0] - pendulum.position2
+    # print(o_2e, W(quad, pendulum, ref1, ref2, k11, k33))
 
 
 # Plots

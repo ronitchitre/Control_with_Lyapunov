@@ -103,19 +103,19 @@ def W_dot(quad, pendulum, ref1, ref2, k11, k33):
     o_2e = o_2r - pendulum.position2
     p_1e = p_1r - quad.mom1
     p_2e = p_2r - pendulum.mom2
-    inertia1_spatial = R1.dot(quad.inertia1).dot(R1.T)
-    inertia1_spatial_inv = np.linalg.inv(inertia1_spatial)
-    omega1 = inertia1_spatial_inv.dot(quad.ang_mom1)
+    # inertia1_spatial = R1.dot(quad.inertia1).dot(R1.T)
+    # inertia1_spatial_inv = np.linalg.inv(inertia1_spatial)
+    # omega1 = inertia1_spatial_inv.dot(quad.ang_mom1)
     omega2 = R2.dot(np.linalg.inv(pendulum.inertia2)).dot(R2.T).dot(pendulum.ang_mom2)
     W1 = np.dot(o_1e, p_1e) / quad.mass1
     W2 = np.dot(o_2e, p_2e) / pendulum.mass2
     gamma = np.array([0, 0, 1])
-    W3 = -1 * np.dot(gamma, hat(omega2).dot(R2).dot(gamma))
+    W3 = -1 * np.dot(omega2, np.cross(R2.dot(gamma), gamma))
     f_s = spring_force(quad, pendulum)
     torq_s_1 = np.cross(R1.dot(quad.d), f_s)
     torq_fu = np.cross(R1.dot(quad.pos_of_control), control_app[0])
     W4 = k11 * np.dot(p_1e, -1 * quad.f_e_1 - f_s - control_app[0])
-    W5 = k11 * np.dot(p_2e, -1 * pendulum.f_e_2 + f_s + control_app[3])
+    W5 = k11 * np.dot(p_2e, -1 * pendulum.f_e_2 + f_s - control_app[3])
     W6 = k33 * np.dot(quad.ang_mom1, control_app[1] - control_app[2] + torq_s_1 + torq_fu)
     W7 = k33 * np.dot(pendulum.ang_mom2, control_app[2])
     dec1 = k11 * np.linalg.norm(p_1e) ** 2
@@ -125,7 +125,7 @@ def W_dot(quad, pendulum, ref1, ref2, k11, k33):
 
 
 def W(quad, pendulum, ref1, ref2, k11, k33):
-    R1 = quad.R1
+    # R1 = quad.R1
     R2 = pendulum.R2
     o_1r = ref1[0]
     o_2r = ref2[0]
@@ -138,9 +138,9 @@ def W(quad, pendulum, ref1, ref2, k11, k33):
     e3 = np.array([0, 0, 1])
     W1 = (np.linalg.norm(o_1e) ** 2) / 2
     W2 = (np.linalg.norm(o_2e) ** 2) / 2
-    W3 = (np.linalg.norm(e3 - R2.dot(e3)) ** 2) / 2
-    W4 = (k11 * np.linalg.norm(p_1e) ** 2) + (k11 * np.linalg.norm(p_2e) ** 2)
-    W5 = (k33 * np.linalg.norm(quad.ang_mom1) ** 2) + (k33 * np.linalg.norm(pendulum.ang_mom2) ** 2)
+    W3 = (np.linalg.norm(R2.dot(e3) - e3) ** 2) / 2
+    W4 = ((k11 * np.linalg.norm(p_1e) ** 2) / 2) + ((k11 * np.linalg.norm(p_2e) ** 2) / 2)
+    W5 = ((k33 * np.linalg.norm(quad.ang_mom1) ** 2) / 2) + ((k33 * np.linalg.norm(pendulum.ang_mom2) ** 2) / 2)
     return W1 + W2 + W3 + W4 + W5
 
 
