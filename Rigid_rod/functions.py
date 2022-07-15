@@ -69,25 +69,6 @@ def beta_force(quad, pendulum, ref1, ref2, k33):
     return scal * np.array([0, 0, 1])
 
 
-# def beta_new(quad, k33):
-#     gamma3 = np.array([0, 0, 1])
-#     R1 = quad.m_R1
-#     inertia1 = quad.m_inertia1
-#     inertia1_inv = np.linalg.inv(inertia1)
-#     inertia1_inv_spatial = R1.dot(inertia1_inv).dot(R1.T)
-#     omega1 = inertia1_inv_spatial.dot(quad.v_ang_mom1)
-#     Hp1 = quad.v_ang_mom1 - np.cross(R1.dot(quad.v_d), quad.v_mom1)
-#     temp = np.cross(R1.dot(gamma3), gamma3)
-#     if abs(Hp1[2]) >= 10 ** -3:
-#         return (np.dot(omega1, temp) / (k33 * Hp1[2])) * np.array([0, 0, 1])
-#     elif abs(Hp1[1]) >= 10 ** -3:
-#         return (np.dot(omega1, temp) / (k33 * Hp1[1])) * np.array([0, 1, 0])
-#     elif abs(Hp1[0]) >= 10 ** -3:
-#         return (np.dot(omega1, temp) / (k33 * Hp1[0])) * np.array([1, 0, 0])
-#     else:
-#         return np.array([0, 0, 0])
-
-
 def constraint_force(quad, pendulum, control):
     R1 = quad.m_R1
     R2 = pendulum.m_R2
@@ -260,7 +241,7 @@ def W_dot(quad, pendulum, ref1, ref2, k33):
     ref1 = k33 * (p_1e[2] + p_2e[2]) ** 2
     ref2 = k33 * np.linalg.norm(H_p_1) ** 2
     ref3 = k33 * np.linalg.norm(H_p_2) ** 2
-    return W1 + W2 + W3 + W4 + W5
+    return W1 + W2 + W3 + W4 + W5 + ref1 + ref2 + ref3
 
 
 def W(quad, pendulum, ref1, ref2, k33):
