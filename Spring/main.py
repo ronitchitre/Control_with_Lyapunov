@@ -23,11 +23,11 @@ R2 = r2.as_matrix()
 # R2 = np.eye(3)
 c3 = np.array([0, 0, 1])
 d = np.array([0, 0, -0.5])
-o2 = o1 + R1.dot(d) - (R2.dot(c3) * constants.length / 2) + np.array([0, 0, -3])
+o2 = o1 + R1.dot(d) - (R2.dot(c3) * constants.length / 2)
 ang_mom2 = np.array([0., 0., 0.])
 pendulum = Pendulum(o2, R2, mom2, ang_mom2)
 
-ref1 = np.array([[0, 0, 10], [0, 0, 0]])
+ref1 = np.array([[3, 2, 10], [0, 0, 0]])
 refo2 = ref1[0] + d - (c3 * constants.length / 2) - (constants.mass2 * 9.8 / constants.k_spring) * c3
 print(refo2)
 refp2 = np.array([0, 0, 0])
@@ -51,14 +51,17 @@ for i in range(len(initial_cond)):
 time = np.linspace(0, tf, 10000)
 y = rk4method(system_ode, initial_x, time, 8)
 
-for i in y:
-    # print(iter)
-    quad = Quad(i[0], i[1], i[2], i[3])
-    pendulum = Pendulum(i[4], i[5], i[6], i[7])
-    # inertia_2_inv = np.linalg.norm(pendulum.inertia2)
-    # inertia_2_inv_spatial = pendulum.R2.dot(inertia_2_inv).dot(pendulum.R2.T)
-    o_2e = ref2[0] - pendulum.position2
-    # print(o_2e, W(quad, pendulum, ref1, ref2, k11, k33))
+# for i in y:
+#     # print(iter)
+#     quad = Quad(i[0], i[1], i[2], i[3])
+#     pendulum = Pendulum(i[4], i[5], i[6], i[7])
+#     # inertia_2_inv = np.linalg.norm(pendulum.inertia2)
+#     # inertia_2_inv_spatial = pendulum.R2.dot(inertia_2_inv).dot(pendulum.R2.T)
+#     R1 = quad.R1
+#     R2 = pendulum.R2
+#     c3 = np.array([0, 0, 1])
+#     print(pendulum.position2 + R2.dot(c3) - quad.position1 - R1.dot(quad.d))
+#     # print(o_2e, W(quad, pendulum, ref1, ref2, k11, k33))
 
 
 # Plots
@@ -101,6 +104,7 @@ def plots(y, time):
     plt.title('position of quad')
     plt.xlabel('time')
     plt.ylabel('position')
+    plt.savefig('o1.jpeg', dpi=1200)
     plt.show()
 
     plt.plot(time, p1[:, 0])
@@ -110,6 +114,7 @@ def plots(y, time):
     plt.title('linear momentum of quad')
     plt.xlabel('time')
     plt.ylabel('momentum')
+    plt.savefig('p1.jpeg', dpi=1200)
     plt.show()
 
     plt.plot(time, pi1[:, 0])
@@ -119,6 +124,7 @@ def plots(y, time):
     plt.title('ang momentum of quad')
     plt.xlabel('time')
     plt.ylabel('ang momentum')
+    plt.savefig('pi1.jpeg', dpi=1200)
     plt.show()
 
     plt.plot(time, a[:, 0])
@@ -128,6 +134,7 @@ def plots(y, time):
     plt.title('o2 - o1 - R1d')
     plt.xlabel('time')
     plt.ylabel('o2 - o1 - R1d')
+    plt.savefig('ori.jpeg', dpi=1200)
     plt.show()
 
     plt.plot(time, o2[:, 0])
@@ -137,6 +144,7 @@ def plots(y, time):
     plt.title('position of pendulum')
     plt.xlabel('time')
     plt.ylabel('position')
+    plt.savefig('o2.jpeg', dpi=1200)
     plt.show()
 
     plt.plot(time, p2[:, 0])
@@ -146,6 +154,7 @@ def plots(y, time):
     plt.title('linear momentum of pendulum')
     plt.xlabel('time')
     plt.ylabel('momentum')
+    plt.savefig('p2.jpeg', dpi=1200)
     plt.show()
 
     plt.plot(time, pi2[:, 0])
@@ -155,6 +164,7 @@ def plots(y, time):
     plt.title('ang momentum of pendulum')
     plt.xlabel('time')
     plt.ylabel('ang momentum')
+    plt.savefig('pi2.jpeg', dpi=1200)
     plt.show()
 
     plt.plot(time, f_u_1[:, 0])
@@ -164,6 +174,7 @@ def plots(y, time):
     plt.title('control force on quad')
     plt.xlabel('time')
     plt.ylabel('force')
+    plt.savefig('force_quad.jpeg', dpi=1200)
     plt.show()
 
     plt.plot(time, f_u_2[:, 0])
@@ -173,6 +184,7 @@ def plots(y, time):
     plt.title('control force on pendulum')
     plt.xlabel('time')
     plt.ylabel('force')
+    plt.savefig('force_pend.jpeg', dpi=1200)
     plt.show()
 
     plt.plot(time, torq_u_1[:, 0])
@@ -182,6 +194,7 @@ def plots(y, time):
     plt.title('control torque on quad')
     plt.xlabel('time')
     plt.ylabel('torque')
+    plt.savefig('torq_quad.jpeg', dpi=1200)
     plt.show()
 
     plt.plot(time, torq_u_2[:, 0])
@@ -191,18 +204,21 @@ def plots(y, time):
     plt.title('control torque on pendulum')
     plt.xlabel('time')
     plt.ylabel('torque')
+    plt.savefig('torq_pend.jpeg', dpi=1200)
     plt.show()
 
     plt.plot(time, W_val)
     plt.title('W')
     plt.xlabel('time')
     plt.ylabel('W')
+    plt.savefig('W.jpeg', dpi=1200)
     plt.show()
 
     plt.plot(time, W_dot_val)
     plt.title('W_dot')
     plt.xlabel('time')
     plt.ylabel('W_dot')
+    plt.savefig('W_dot.jpeg', dpi=1200)
     plt.show()
 
 

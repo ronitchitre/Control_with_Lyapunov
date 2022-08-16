@@ -24,9 +24,9 @@ R2 = r2.as_matrix()
 ang_mom2 = np.array([0., 0., 0.])
 pendulum = Pendulum(R2, ang_mom2, quad)
 
-ref1 = np.array([[1, 1, -5], [0, 0, 0]])
-ref2 = np.array([[1, 1, -5.5], [0, 0, 0]])
-k33 = 0.1
+ref1 = np.array([[1, 1, -7], [0, 0, 0]])
+ref2 = np.array([[1, 1, -7.5 - 0.001], [0, 0, 0]])
+k33 = 0.05
 tf = 20
 
 

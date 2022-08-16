@@ -241,7 +241,7 @@ def W_dot(quad, pendulum, ref1, ref2, k33):
     ref1 = k33 * (p_1e[2] + p_2e[2]) ** 2
     ref2 = k33 * np.linalg.norm(H_p_1) ** 2
     ref3 = k33 * np.linalg.norm(H_p_2) ** 2
-    return W1 + W2 + W3 + W4 + W5 + ref1 + ref2 + ref3
+    return W1 + W2 + W3 + W4 + W5
 
 
 def W(quad, pendulum, ref1, ref2, k33):

@@ -15,13 +15,24 @@ def unit_vec(v):
         return np.array([0, 0, 0])
 
 
-def spring_force(quad, pendulum):
+def spring_force(quad, pendulum, ref1, ref2):
     R1 = quad.R1
     R2 = pendulum.R2
     d2 = (pendulum.length / 2) * np.array([0, 0, 1])
     a = pendulum.position2 + R2.dot(d2) - quad.position1 - R1.dot(quad.d)
-    extension = np.linalg.norm(a)
+    extension = np.linalg.norm(a) + spring_control(quad, pendulum, ref1, ref2)
     return pendulum.ks * extension * unit_vec(a)
+
+
+def spring_control(quad, pendulum, ref1, ref2):
+    p_2r = ref2[1]
+    p_2e = p_2r - pendulum.mom2
+    R1 = quad.R1
+    R2 = pendulum.R2
+    s2 = pendulum.position2 + (R2.dot(np.array([0, 0, 1])))*(pendulum.length / 2)
+    s1 = quad.position1 + R1.dot(quad.d)
+    zhai = -1 * np.linalg.norm(s2 - s1)
+    return zhai
 
 
 def control(quad, pendulum, ref1, ref2, k11, k33):
@@ -36,27 +47,28 @@ def control(quad, pendulum, ref1, ref2, k11, k33):
     p_2e = p_2r - pendulum.mom2
     R1 = quad.R1
     R2 = pendulum.R2
+    a = pendulum.position2 - quad.position1 - R1.dot(quad.d)
     e3 = np.array([0, 0, 1])
-    f_s = spring_force(quad, pendulum)
+    f_s = spring_force(quad, pendulum, ref1, ref2)
     inertia2_inv = np.linalg.inv(pendulum.inertia2)
     inertia2_inv_spatial = R2.dot(inertia2_inv).dot(R2.T)
     inertia2_inv_spatial_trans = inertia2_inv_spatial.T
 
-    f_u_1 = -1 * quad.f_e_1 - f_s + (o_1e / (k11 * quad.mass1)) + p_1e
-    f_u_2 = -1 * pendulum.f_e_2 + f_s + (o_2e / (k11 * pendulum.mass2)) + p_2e
-    # f_u_2 = -1 * pendulum.f_e_2 + f_s + p_2e
-    # f_u_2 = np.array([0, 0, 0])
+    torq_s_1 = np.cross(R1.dot(quad.d), f_s)
+    torq_s_2 = np.cross(a, f_s)
+
+    # f_u_1 = -1 * quad.f_e_1 - f_s + (o_1e / (k11 * quad.mass1)) + p_1e
+    f_u_1 = -1 * quad.f_e_1 - pendulum.f_e_2 - pendulum.mom2
+    # f_u_2 = -1 * pendulum.f_e_2 + f_s + (o_2e / (k11 * pendulum.mass2)) + p_2e
+    f_u_2 = np.array([0, 0, 0])
     # if p_1e[2] != 0:
     #     f_u_1 += np.dot(p_2e, -1 * pendulum.f_e_2 + f_s) / p_1e[2] * e3
     #     f_u_1 += o_2e[2] * p_2e[2] / (k11 * p_1e[2] * pendulum.mass2) * e3
-    # f_u_1 = -1 * quad.f_e_1 - f_s
 
-    torq_u_2 = inertia2_inv_spatial_trans.dot(np.cross(R2.dot(gamma), gamma)) / k33 - pendulum.ang_mom2
+    torq_u_2 = inertia2_inv_spatial_trans.dot(np.cross(R2.dot(gamma), gamma)) / k33 - torq_s_2 - 10 * pendulum.ang_mom2
 
     torq_fu = np.cross(R1.dot(quad.pos_of_control), f_u_1)
-    torq_s_1 = np.cross(R1.dot(quad.d), f_s)
-    torq_u_1 = torq_u_2 - torq_s_1 - torq_fu - quad.ang_mom1
-
+    torq_u_1 = torq_u_2 - torq_s_1 - torq_fu - 10 * quad.ang_mom1
     return [f_u_1, torq_u_1, torq_u_2, f_u_2]
 
 
@@ -64,10 +76,11 @@ def dynamics(quad, pendulum, ref1, ref2, k11, k33):
     x_dot = np.empty(8, dtype='object')
     R1 = quad.R1
     R2 = pendulum.R2
+    a = pendulum.position2 - quad.position1 - R1.dot(quad.d)
     control_app = control(quad, pendulum, ref1, ref2, k11, k33)
-    f_s = spring_force(quad, pendulum)
+    f_s = spring_force(quad, pendulum, ref1, ref2)
     torq_s_1 = np.cross(R1.dot(quad.d), f_s)
-    # torq_s_2 = np.cross(a, f_s)
+    torq_s_2 = np.cross(a, f_s)
     torq_fu = np.cross(R1.dot(quad.pos_of_control), control_app[0])
     o1_dot = quad.mom1 / quad.mass1
     x_dot[0] = o1_dot
@@ -86,7 +99,7 @@ def dynamics(quad, pendulum, ref1, ref2, k11, k33):
     x_dot[5] = R2_dot
     p2_dot = pendulum.f_e_2 - f_s + control_app[3]
     x_dot[6] = p2_dot
-    ang_mom2_dot = control_app[2]
+    ang_mom2_dot = control_app[2] + torq_s_2
     x_dot[7] = ang_mom2_dot
     return x_dot
 
@@ -111,7 +124,7 @@ def W_dot(quad, pendulum, ref1, ref2, k11, k33):
     W2 = np.dot(o_2e, p_2e) / pendulum.mass2
     gamma = np.array([0, 0, 1])
     W3 = -1 * np.dot(omega2, np.cross(R2.dot(gamma), gamma))
-    f_s = spring_force(quad, pendulum)
+    f_s = spring_force(quad, pendulum, ref1, ref2)
     torq_s_1 = np.cross(R1.dot(quad.d), f_s)
     torq_fu = np.cross(R1.dot(quad.pos_of_control), control_app[0])
     W4 = k11 * np.dot(p_1e, -1 * quad.f_e_1 - f_s - control_app[0])

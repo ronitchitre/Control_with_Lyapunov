@@ -1,4 +1,5 @@
 import numpy as np
+import constants
 
 
 def hat(v_u):
@@ -13,7 +14,7 @@ class Quad:
         self.m_inertia1 = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
         self.v_mom1 = v_mom1
         self.mass1 = 6
-        self.v_d = np.array([0, 0, 0])
+        self.v_d = np.array([0, 0, -0.001])
         self.m_R1 = m_R1
         self.v_ang_mom1 = v_ang_mom1
         gravity = np.array([0, 0, -9.8])
@@ -25,7 +26,7 @@ class Pendulum:
     def __init__(self, m_R2, v_ang_mom2, quad):
         self.m_inertia2 = np.array([[1 / 12, 0, 0], [0, 1 / 12, 0], [0, 0, 1 / 120]])
         self.mass2 = 1
-        self.length = 1
+        self.length = constants.length
         self.m_R2 = m_R2
         self.v_ang_mom2 = v_ang_mom2
         gravity = np.array([0, 0, -9.8])
