@@ -1,4 +1,3 @@
-
 from Body import *
 
 
@@ -19,39 +18,24 @@ def spring_force(pendulum):
     return constants.k_spring * (pendulum.l - constants.length_0)
 
 
-def control(quad, pendulum, ref1, ref2):
-    o_1r = ref1[0]
-    v_1r = ref1[1]
-    o_1e = o_1r - quad.position1
-    v_1e = v_1r - quad.vel1
-    q_r = np.array([0, 0, -1])
-    q_e = np.dot(pendulum.q, q_r) - 1
-    f_s = spring_force(pendulum)
-    u_perp = quad.mass1 * pendulum.l * (np.linalg.norm(pendulum.ang_vel2) ** 2)
-    u_perp += -1 * constants.mew * f_s * quad.mass1
-    u_perp += quad.mass1 * (pendulum.l - ref2[0])
-    u_perp += quad.mass1 * constants.k_l * (pendulum.l_dot - ref2[1])
-    u_par = (quad.mass1 * constants.g) + (quad.mass1 * o_1e) + (quad.mass1 * constants.k_o * v_1e)
-    f_u_1 = (u_perp * pendulum.q) - np.cross(pendulum.q, np.cross(pendulum.q, u_par))
-
-    torq_u_2 = pendulum.l * np.cross(pendulum.q, f_u_1)
-    torq_u_2 += (2 * quad.mass1 * pendulum.l * pendulum.l_dot * pendulum.ang_vel2)
-    torq_u_2 += -1 * quad.mass1 * pendulum.l * pendulum.l * q_e * np.cross(pendulum.q, q_r)
-    torq_u_2 += -1 * quad.mass1 * pendulum.l * pendulum.l * pendulum.ang_vel2 * constants.k_q
-
-    torq_u_1 = -1 * np.cross(quad.inertia1.dot(quad.ang_vel1), quad.ang_vel1) - (constants.k_omega * quad.ang_vel1)
-    return [f_u_1, torq_u_1, torq_u_2]
+def control(quad, pendulum, t):
+    f_s_d = -1 * pendulum.des_trajectory[2](t) - pendulum.mass2 * constants.g
+    f_s_d += -1 * constants.Kp_o * (pendulum.des_trajectory[0](t) - pendulum.position2)
+    f_s_d += -1 * constants.Kd_o * (pendulum.des_trajectory[1](t) - pendulum.vel2)
+    l_ref = np.linalg.norm(f_s_d) / constants.k_spring
+    q_ref = unit_vec(f_s_d)
+    torq_u_1 = -1 * np.cross(quad.inertia1.dot(quad.ang_vel1), quad.ang_vel1) - (constants.Kd_ang1 * quad.ang_vel1)
+    return [f_u_1, torq_u_1]
 
 
-def dynamics(quad, pendulum, ref1, ref2):
+def dynamics(quad, pendulum, t):
     x_dot = np.empty(8, dtype='object')
     R1 = quad.R1
-    control_app = control(quad, pendulum, ref1, ref2)
+    control_app = control(quad, pendulum, t)
     f_s = spring_force(pendulum)
     o1_dot = quad.vel1
     x_dot[0] = o1_dot
-    v1_dot = -1 * constants.g + constants.k_spring * (pendulum.l - constants.length_0) * pendulum.q
-    v1_dot += (control_app[0] / quad.mass1)
+    v1_dot = -1 * constants.g + f_s * pendulum.q + (control_app[0] / quad.mass1)
     x_dot[1] = v1_dot
     R1_dot = R1.dot(hat(quad.ang_vel1))
     x_dot[2] = R1_dot
@@ -71,6 +55,7 @@ def dynamics(quad, pendulum, ref1, ref2):
     ang_vel2_dot += control_app[2] / (quad.mass1 * pendulum.l * pendulum.l)
     x_dot[7] = ang_vel2_dot
     return x_dot
+
 
 # def W_dot(quad, pendulum, ref1, ref2, k11, k33):
 #     R2 = pendulum.R2

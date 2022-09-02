@@ -20,11 +20,16 @@ class Quad:
 
 
 class Pendulum:
-    def __init__(self, quad, l, l_dot, q, ang_vel2):
+    def __init__(self, l, l_dot, q, ang_vel2):
         self.mass2 = constants.mass2
         self.length_0 = constants.length_0
-        self.position2 = quad.position1 + l * q
         self.l = l
         self.q = q
         self.l_dot = l_dot
         self.ang_vel2 = ang_vel2
+
+    def spring_force(self):
+        return constants.k_spring * (self.l - constants.length_0) * self.q
+
+    def damper(self):
+        return constants.c_damper * self.l_dot * self.q

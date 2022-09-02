@@ -1,47 +1,119 @@
-
 import matplotlib.pyplot as plt
 from functions import *
+import Body
 from solver_rk4method import rk4method
 import constants
 from scipy.spatial.transform import Rotation as R
 
 print('done')
 
-o1 = np.array([0, 0, 0])
-vel1 = np.array([0, 0, 0])
-ang_vel1 = np.array([0., 0., 0.])
-# R1 = quaternion_rotation_matrix(Q1)
-# r1 = R.from_euler('xyz', [20, 10, 0], degrees=True)
-# R1 = r1.as_matrix()
-R1 = np.eye(3)
-quad = Quad(o1, vel1, R1, ang_vel1)
 
-vel2 = np.array([0, 0, 0])
-ang_mom2 = np.array([0., 0., 0.])
-l = 1
-l_dot = 0
-q = unit_vec(np.array([0, 0, -1]))
-ang_vel2 = np.array([0, 0, 0])
-pendulum = Pendulum(quad, l, l_dot, q, ang_vel2)
+class Main:
+    def __init__(self, quad, pendulum, h, pend_des_traj):
+        self.quad = quad
+        self.pendulum = pendulum
+        self.h = h
+        self.quad_traj = [quad]
+        self.pend_traj = [pendulum]
+        self.pend_des_traj = pend_des_traj
 
-ref1 = np.array([[3, 2, 10], [0, 0, 0]])
-ref2 = np.array([2, 0])
-tf = 20
+    def estimate_o1r(self, o_2r, o_2r_dot, o_2r_ddot):
+        o_1r = o_2r - (self.pendulum.l * self.pendulum.q)
+        o_1r_dot = o_2r_dot - (self.pendulum.l_dot * self.pendulum.q)
+        o_1r_dot += -1 * self.pendulum.l * np.cross(self.pendulum.ang_vel2, self.pendulum.q)
+        l_ddot_est = (self.pend_traj[-1].l_dot - self.pend_traj[-2].l_dot) / self.h
+        omega_dot_est = (self.pend_traj[-1].ang_vel2 - self.pend_traj[-2].ang_vel2) / self.h
+        o_1r_ddot = o_2r_ddot - (l_ddot_est * self.pendulum.q)
+        o_1r_ddot += -2 * self.pendulum.l_dot * np.cross(self.pendulum.ang_vel2, self.pendulum.q)
+        o_1r_ddot += -1 * self.pendulum.l * np.cross(omega_dot_est, self.pendulum.q)
+        o_1r_ddot += self.pendulum.l * (np.linalg.norm(self.pendulum.ang_vel2) ** 2) * self.pendulum.q
+        return o_1r, o_1r_dot, o_1r_ddot
+
+    def controller(self, t):
+        o_2r = self.pend_des_traj[0](t)
+        o_2r_dot = self.pend_des_traj[1](t)
+        o_2r_ddot = self.pend_des_traj[2](t)
+        o1_r, o1r_dot, o1r_ddot = self.estimate_o1r(o_2r, o_2r_dot, o_2r_ddot)
+        o1_e = o1_r - self.quad.position1
+        o1_dot_e = o1r_dot - self.quad.vel1
+        f_u_1 = self.quad.mass1 * o1r_ddot + self.quad.mass1 * constants.g
+        f_u_1 += -1 * self.pendulum.spring_force() * self.pendulum.q
+        f_u_1 += -1 * self.pendulum.damper() * self.pendulum.q
+        f_u_1 += (self.quad.mass1 * constants.Kp_o * o1_e) + (self.quad.mass1 * constants.Kd_o * o1_dot_e)
+        f_u_1 += self.quad.mass1 * o1r_ddot
+
+        torq_u_1 = -1 * np.cross(self.quad.inertia1.dot(self.quad.ang_vel1), self.quad.ang_vel1)
+        torq_u_1 += constants.Kd_ang1 * self.quad.ang_vel1
+
+        return [f_u_1, torq_u_1]
+
+    def dynamics(self, t):
+        x_dot = np.empty(8, dtype='object')
+        R1 = self.quad.R1
+        control_app = control(self.quad, self.pendulum, t)
+        f_s = spring_force(self.pendulum)
+        o1_dot = self.quad.vel1
+        x_dot[0] = o1_dot
+        v1_dot = -1 * constants.g + (self.pendulum.spring_force() / self.quad.mass1)
+        v1_dot += (self.pendulum.damper() / self.quad.mass1) + (control_app[0] / self.quad.mass1)
+        x_dot[1] = v1_dot
+        R1_dot = R1.dot(hat(self.quad.ang_vel1))
+        x_dot[2] = R1_dot
+        ang_vel1_dot = np.cross(self.quad.inertia1.dot(self.quad.ang_vel1), quad.ang_vel1) + control_app[1]
+        ang_vel1_dot = np.linalg.inv(self.quad.inertia1).dot(ang_vel1_dot)
+        x_dot[3] = ang_vel1_dot
+
+        l_dot = self.pendulum.l_dot
+        x_dot[4] = l_dot
+        l_dot_dot = self.pendulum.l * (np.linalg.norm(self.pendulum.ang_vel2) ** 2)
+        l_dot_dot += (-1 * constants.mew * np.dot(self.pendulum.q, self.pendulum.spring_force()))
+        l_dot_dot += (-1 * constants.mew * np.dot(self.pendulum.q, self.pendulum.damper()))
+        l_dot_dot += (-1 * control_app[0] / self.quad.mass1) * self.pendulum.q
+        l_dot_dot += -1 * (np.dot(control_app[0], self.pendulum.q)) / self.quad.mass1
+        x_dot[5] = l_dot_dot
+        q_dot = np.cross(self.pendulum.ang_vel2, self.pendulum.q)
+        x_dot[6] = q_dot
+        ang_vel2_dot = (-2 * self.pendulum.l_dot * self.pendulum.ang_vel2 / self.pendulum.l)
+        ang_vel2_dot += -1 * np.cross(self.pendulum.q, control_app[0]) / (self.quad.mass1 * self.pendulum.l)
+        x_dot[7] = ang_vel2_dot
+        return x_dot
 
 
-def system_ode(t, x):
-    quad = Quad(x[0], x[1], x[2], x[3])
-    pendulum = Pendulum(quad, x[4], x[5], x[6], x[7])
-    x_dot = dynamics(quad, pendulum, ref1, ref2)
-    return x_dot
+def o_2r(t):
+    return np.array([np.sin(t), np.cos(t), 0])
 
 
-initial_cond = [o1, vel1, R1, ang_vel1, l, l_dot, q, ang_vel2]
-initial_x = np.empty(8, dtype='object')
-for i in range(len(initial_cond)):
-    initial_x[i] = initial_cond[i]
-time = np.linspace(0, tf, 10000)
-y = rk4method(system_ode, initial_x, time, 8)
+def o_2r_dot(t):
+    return np.array([np.cos(t), -1 * np.sin(t), 0])
+
+
+def o_2r_ddot(t):
+    return np.array([-1 * np.sin(t), -1 * np.cos(t), 0])
+
+
+def func(t, y):
+    quad = Body.Quad(y[0], y[1], y[2], y[3])
+    pend = Body.Pendulum(y[4], y[5], y[6], y[7])
+    system = Main(quad, pendulum, h)
+
+
+h = 0.001
+desired_traj = [o_2r, o_2r_dot, o_2r_ddot]
+
+o1_initial = np.array([0, 0, 1])
+v1_initial = np.array([0, 0, 0])
+R1_initial = np.eye(3)
+ang_vel1_initial = np.array([0, 0, 0])
+quad_initial = Body.Quad(o1_initial, v1_initial, R1_initial, ang_vel1_initial)
+
+l_initial = 1
+l_dot_initial = 0
+q_initial = np.array([0, 0, -1])
+omega_initial = np.array([0, 0, 0])
+pend_initial = Body.Pendulum(l_initial, l_dot_initial, q_initial, omega_initial)
+
+system = Main(quad_initial, pend_initial, h, desired_traj)
+
 
 # for i in y:
 #     # print(iter)
