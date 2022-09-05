@@ -23,11 +23,10 @@ def rk4method_update(func, ic, t, h):
     t_new = t + (h / 2)
     ic_new = ic + (h * k1 / 2)
     k2 = func(t_new, ic_new)
-    ic
-    \_new = ic + (h * k2 / 2)
+    ic_new = ic + (h * k2 / 2)
     k3 = func(t_new, ic_new)
     t_new = t + h
-    ic_new = y + h * k3
+    ic_new = ic + h * k3
     k4 = func(t_new, ic_new)
     update = (1 / 6) * (k1 + 2 * k2 + 2 * k3 + k4) * h
     return ic + update
