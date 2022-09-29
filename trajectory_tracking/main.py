@@ -44,7 +44,7 @@ class Main:
         o_1r_ddot += -2 * self.pendulum.l_dot * np.cross(self.pendulum.ang_vel2, self.pendulum.q)
         o_1r_ddot += -1 * self.pendulum.l * np.cross(omega_dot_est, self.pendulum.q)
         o_1r_ddot += self.pendulum.l * (np.linalg.norm(self.pendulum.ang_vel2) ** 2) * self.pendulum.q
-        return o_1r, o_1r_dot, np.array([0, 0, 0])
+        return o_1r, o_1r_dot, o_2r_ddot
 
     def controller(self, t):
         o_2r = self.pend_des_traj[0](t)
@@ -122,9 +122,9 @@ R1_initial = np.eye(3)
 ang_vel1_initial = np.array([0, 0, 0])
 quad_initial = Body.Quad(o1_initial, v1_initial, R1_initial, ang_vel1_initial)
 
-l_initial = constants.length_0 + (constants.mass2 * 9.8 / constants.k_spring) + 1
+l_initial = constants.length_0 + (constants.mass2 * 9.8 / constants.k_spring) + 5
 l_dot_initial = 0.0
-q_initial = unit_vec(np.array([0.1, 0, -0.9]))
+q_initial = unit_vec(np.array([0.5, 0.5, -0.9]))
 omega_initial = np.array([0, 0, 0])
 pend_initial = Body.Pendulum(l_initial, l_dot_initial, q_initial, omega_initial)
 
@@ -154,19 +154,8 @@ q_list = np.array([i.q for i in system.pend_traj])
 
 o2_list = o1_list + (q_list * l_list[:, np.newaxis])
 
-plt.plot(t_mesh, o1_list[:, 0])
-plt.plot(t_mesh, o1_list[:, 1])
-plt.plot(t_mesh, o1_list[:, 2])
-plt.title('postion of quad')
-plt.legend(['x', 'y', 'z'])
-plt.show()
 
-
-def o_2r_real(t):
-    return np.array([1 * np.sin(t), 1 * np.cos(t), 0])
-
-
-o_2r_list = np.array([o_2r_real(i) for i in t_mesh])
+o_2r_list = np.array([o_2r(i) for i in t_mesh])
 
 plt.plot(t_mesh, o2_list[:, 0])
 plt.plot(t_mesh, o2_list[:, 1])
@@ -176,16 +165,55 @@ plt.plot(t_mesh, o2_list[:, 2])
 # plt.plot(t_mesh, o_2r_list[:, 2], '-')
 plt.title('position of pend')
 plt.legend(['x', 'y', 'z'])
+plt.xlabel('time (s)')
+plt.ylabel('position')
 plt.show()
 
 plt.plot(o2_list[:, 0], o2_list[:, 1])
 plt.plot(o_2r_list[:, 0], o_2r_list[:, 1], 'r-')
 plt.title('locus')
-plt.legend(['real', 'actual'])
+plt.legend(['real', 'desired'])
+plt.xlabel('time (s)')
+plt.ylabel('position')
+plt.show()
+
+plt.plot(t_mesh, o2_list[:, 0])
+plt.plot(t_mesh, o_2r_list[:, 0])
+plt.title('compare trajectory x')
+plt.legend(['actual', 'desired'])
+plt.xlabel('time (s)')
+plt.ylabel('position')
+plt.show()
+
+plt.plot(t_mesh, o2_list[:, 1])
+plt.plot(t_mesh, o_2r_list[:, 1])
+plt.title('compare trajectory y')
+plt.legend(['actual', 'desired'])
+plt.xlabel('time (s)')
+plt.ylabel('position')
+plt.show()
+
+plt.plot(t_mesh, o2_list[:, 2])
+plt.plot(t_mesh, o_2r_list[:, 2])
+plt.title('compare trajectory z')
+plt.legend(['actual', 'desired'])
+plt.xlabel('time (s)')
+plt.ylabel('position')
+plt.show()
+
+plt.plot(t_mesh, o1_list[:, 0])
+plt.plot(t_mesh, o1_list[:, 1])
+plt.plot(t_mesh, o1_list[:, 2])
+plt.title('position of quad')
+plt.legend(['x', 'y', 'z'])
+plt.xlabel('time (s)')
+plt.ylabel('position')
 plt.show()
 
 plt.plot(t_mesh, l_list)
 plt.title('length')
+plt.xlabel('time (s)')
+plt.ylabel('length')
 plt.show()
 
 plt.plot(t_mesh, q_list[:, 0])
